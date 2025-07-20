@@ -8,50 +8,61 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 32 25% 94%;
-    --foreground: 30 15% 25%;
+    /* New color palette - Akaroa, Rhino, Sandstone, Walnut, Desert */
+    --akaroa: 35 27% 78%;     /* #d2bca1 */
+    --rhino: 215 46% 26%;     /* #273f5b */
+    --sandstone: 35 16% 61%;  /* #7f715f */
+    --walnut: 33 62% 28%;     /* #6f481c */
+    --desert: 33 62% 41%;     /* #a76825 */
+    
+    --background: 35 27% 78%;
+    --foreground: 215 46% 26%;
 
-    --card: 30 30% 96%;
-    --card-foreground: 30 15% 25%;
+    --card: 35 35% 85%;
+    --card-foreground: 215 46% 26%;
 
-    --popover: 30 30% 96%;
-    --popover-foreground: 30 15% 25%;
+    --popover: 35 35% 85%;
+    --popover-foreground: 215 46% 26%;
 
-    --primary: 25 40% 65%;
-    --primary-foreground: 30 30% 96%;
+    --primary: 33 62% 41%;
+    --primary-foreground: 35 35% 95%;
 
-    --secondary: 30 25% 85%;
-    --secondary-foreground: 30 15% 25%;
+    --secondary: 35 16% 61%;
+    --secondary-foreground: 215 46% 26%;
 
-    --muted: 30 25% 88%;
-    --muted-foreground: 30 10% 45%;
+    --muted: 35 20% 70%;
+    --muted-foreground: 215 30% 40%;
 
-    --accent: 20 30% 75%;
-    --accent-foreground: 30 15% 25%;
+    --accent: 33 62% 28%;
+    --accent-foreground: 35 35% 95%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 30 30% 96%;
+    --destructive-foreground: 35 35% 95%;
 
-    --border: 30 20% 85%;
-    --input: 30 20% 85%;
-    --ring: 25 40% 65%;
+    --border: 35 20% 65%;
+    --input: 35 20% 65%;
+    --ring: 33 62% 41%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     
     /* Custom design tokens for furniture theme */
-    --warm-beige: 32 25% 94%;
-    --soft-brown: 25 40% 65%;
-    --rich-brown: 20 30% 45%;
-    --cream: 30 30% 96%;
-    --taupe: 30 25% 85%;
+    --warm-beige: 35 27% 78%;    /* akaroa */
+    --soft-brown: 35 16% 61%;    /* sandstone */
+    --rich-brown: 33 62% 28%;    /* walnut */
+    --cream: 35 35% 90%;
+    --taupe: 35 20% 70%;
+    --deep-blue: 215 46% 26%;    /* rhino */
+    --warm-gold: 33 62% 41%;     /* desert */
     
     /* Gradients */
     --gradient-warm: linear-gradient(135deg, hsl(var(--warm-beige)), hsl(var(--cream)));
+    --gradient-luxury: linear-gradient(135deg, hsl(var(--warm-gold)), hsl(var(--rich-brown)));
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
     
     /* Shadows */
-    --shadow-soft: 0 4px 20px -8px hsl(var(--soft-brown) / 0.2);
-    --shadow-elegant: 0 8px 30px -12px hsl(var(--rich-brown) / 0.15);
+    --shadow-soft: 0 4px 20px -8px hsl(var(--soft-brown) / 0.3);
+    --shadow-elegant: 0 8px 30px -12px hsl(var(--rich-brown) / 0.25);
+    --shadow-luxury: 0 12px 40px -16px hsl(var(--warm-gold) / 0.3);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

@@ -62,19 +62,28 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				'akaroa': 'hsl(var(--akaroa))',
+				'rhino': 'hsl(var(--rhino))',
+				'sandstone': 'hsl(var(--sandstone))',
+				'walnut': 'hsl(var(--walnut))',
+				'desert': 'hsl(var(--desert))',
 				'warm-beige': 'hsl(var(--warm-beige))',
 				'soft-brown': 'hsl(var(--soft-brown))',
 				'rich-brown': 'hsl(var(--rich-brown))',
 				'cream': 'hsl(var(--cream))',
-				'taupe': 'hsl(var(--taupe))'
+				'taupe': 'hsl(var(--taupe))',
+				'deep-blue': 'hsl(var(--deep-blue))',
+				'warm-gold': 'hsl(var(--warm-gold))'
 			},
 			backgroundImage: {
 				'gradient-warm': 'var(--gradient-warm)',
+				'gradient-luxury': 'var(--gradient-luxury)',
 				'gradient-subtle': 'var(--gradient-subtle)'
 			},
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
-				'elegant': 'var(--shadow-elegant)'
+				'elegant': 'var(--shadow-elegant)',
+				'luxury': 'var(--shadow-luxury)'
 			},
 			fontFamily: {
 				'serif': ['Playfair Display', 'serif'],
