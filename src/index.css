@@ -8,35 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 32 25% 94%;
+    --foreground: 30 15% 25%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 30 30% 96%;
+    --card-foreground: 30 15% 25%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 30 30% 96%;
+    --popover-foreground: 30 15% 25%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 25 40% 65%;
+    --primary-foreground: 30 30% 96%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 30 25% 85%;
+    --secondary-foreground: 30 15% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 30 25% 88%;
+    --muted-foreground: 30 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 20 30% 75%;
+    --accent-foreground: 30 15% 25%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 30 30% 96%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 30 20% 85%;
+    --input: 30 20% 85%;
+    --ring: 25 40% 65%;
 
     --radius: 0.5rem;
+    
+    /* Custom design tokens for furniture theme */
+    --warm-beige: 32 25% 94%;
+    --soft-brown: 25 40% 65%;
+    --rich-brown: 20 30% 45%;
+    --cream: 30 30% 96%;
+    --taupe: 30 25% 85%;
+    
+    /* Gradients */
+    --gradient-warm: linear-gradient(135deg, hsl(var(--warm-beige)), hsl(var(--cream)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -8px hsl(var(--soft-brown) / 0.2);
+    --shadow-elegant: 0 8px 30px -12px hsl(var(--rich-brown) / 0.15);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
