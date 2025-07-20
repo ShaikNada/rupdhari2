@@ -23,9 +23,25 @@ const AdminDashboard = () => {
     category: '',
     image_url: ''
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   const themes = getThemeNames();
   const categories = getCategoryNames();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+        setFormData({...formData, image_url: result});
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +75,8 @@ const AdminDashboard = () => {
         category: '',
         image_url: ''
       });
+      setImageFile(null);
+      setImagePreview('');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -136,15 +154,23 @@ const AdminDashboard = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Image URL</label>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Product Image</label>
                     <Input
-                      type="url"
-                      placeholder="https://example.com/image.jpg"
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
                       required
                     />
+                    {imagePreview && (
+                      <div className="mt-4">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="h-32 w-32 object-cover rounded-lg border"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Product Name</label>

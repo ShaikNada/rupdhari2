@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { getThemeNames } from "@/data/furnitureData";
@@ -6,11 +6,18 @@ import { useProducts } from "@/hooks/useProducts";
 
 const ThemePage = () => {
   const { themeId } = useParams();
+  const [searchParams] = useSearchParams();
   const { getProductsByTheme, loading } = useProducts();
   
   const themeNames = getThemeNames();
   const themeName = themeNames[themeId || ""] || "Theme";
-  const products = getProductsByTheme(themeId || "");
+  const allProducts = getProductsByTheme(themeId || "");
+  
+  // Filter by category if specified in URL
+  const categoryFilter = searchParams.get('category');
+  const products = categoryFilter 
+    ? allProducts.filter(product => product.category === categoryFilter)
+    : allProducts;
 
   if (loading) {
     return (

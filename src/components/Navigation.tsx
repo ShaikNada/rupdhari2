@@ -19,18 +19,15 @@ const Navigation = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="text-2xl font-serif font-bold text-rich-brown">
-              Rūpadhari
+          <div className="flex flex-col items-center space-y-1">
+            <img 
+              src="/src/assets/logo.png" 
+              alt="Rūpadhari Logo" 
+              className="h-12 w-auto"
+            />
+            <div className="text-sm text-muted-foreground italic text-center">
+              Shaping Dreams & Crafting Spaces
             </div>
-            <div className="text-sm text-soft-brown tracking-wider">
-              architects
-            </div>
-          </div>
-          
-          {/* Tagline */}
-          <div className="hidden lg:block text-sm text-muted-foreground italic">
-            Shaping Dreams & Crafting Spaces
           </div>
           
           {/* Navigation */}
