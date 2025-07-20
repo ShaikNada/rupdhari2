@@ -33,6 +33,14 @@ const AdminDashboard = () => {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [viewImages, setViewImages] = useState({
+    view1: { file: null as File | null, preview: '' },
+    view2: { file: null as File | null, preview: '' },
+    view3: { file: null as File | null, preview: '' },
+    view4: { file: null as File | null, preview: '' }
+  });
+  const [customImageFile, setCustomImageFile] = useState<File | null>(null);
+  const [customImagePreview, setCustomImagePreview] = useState<string>('');
 
   const themes = getThemeNames();
   const categories = getCategoryNames();
@@ -46,6 +54,39 @@ const AdminDashboard = () => {
         const result = e.target?.result as string;
         setImagePreview(result);
         setFormData({...formData, image_url: result});
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleViewImageChange = (viewNumber: 'view1' | 'view2' | 'view3' | 'view4', e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setViewImages(prev => ({
+          ...prev,
+          [viewNumber]: { file, preview: result }
+        }));
+        setFormData(prev => ({
+          ...prev,
+          [`${viewNumber}_image_url`]: result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCustomImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCustomImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setCustomImagePreview(result);
+        setFormData({...formData, customized_image_url: result});
       };
       reader.readAsDataURL(file);
     }
@@ -101,6 +142,14 @@ const AdminDashboard = () => {
       });
       setImageFile(null);
       setImagePreview('');
+      setViewImages({
+        view1: { file: null, preview: '' },
+        view2: { file: null, preview: '' },
+        view3: { file: null, preview: '' },
+        view4: { file: null, preview: '' }
+      });
+      setCustomImageFile(null);
+      setCustomImagePreview('');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -176,10 +225,14 @@ const AdminDashboard = () => {
               <CardTitle>Add New Product</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Product Image</label>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Basic Product Information */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-deep-blue">Basic Product Information</h3>
+                  
+                  {/* Main Product Image */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Main Product Image</label>
                     <Input
                       type="file"
                       accept="image/*"
@@ -196,151 +249,116 @@ const AdminDashboard = () => {
                       </div>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Product Name</label>
-                    <Input
-                      type="text"
-                      placeholder="Enter product name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Theme</label>
-                    <Select
-                      value={formData.theme}
-                      onValueChange={(value) => setFormData({...formData, theme: value})}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select theme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(themes).map(([key, value]) => (
-                          <SelectItem key={key} value={key}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Category</label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({...formData, category: value})}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(categories).map(([key, value]) => (
-                          <SelectItem key={key} value={key}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Product Number</label>
-                    <Input
-                      type="text"
-                      placeholder="e.g., FRN-001"
-                      value={formData.product_number}
-                      onChange={(e) => setFormData({...formData, product_number: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Price (₱)</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
-                      required
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Product Name</label>
+                      <Input
+                        type="text"
+                        placeholder="Enter product name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Product Number</label>
+                      <Input
+                        type="text"
+                        placeholder="e.g., FRN-001"
+                        value={formData.product_number}
+                        onChange={(e) => setFormData({...formData, product_number: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Theme</label>
+                      <Select
+                        value={formData.theme}
+                        onValueChange={(value) => setFormData({...formData, theme: value})}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select theme" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(themes).map(([key, value]) => (
+                            <SelectItem key={key} value={key}>
+                              {value}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Category</label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({...formData, category: value})}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(categories).map(([key, value]) => (
+                            <SelectItem key={key} value={key}>
+                              {value}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Adding Product...' : 'Add Product'}
-                </Button>
-              </form>
 
-              {/* Customization Section */}
-              <div className="mt-8 pt-8 border-t">
-                <h3 className="text-lg font-semibold mb-6">Customization Details</h3>
+                {/* Product Views - 4 Image Grid */}
                 <div className="space-y-6">
-                  
-                  {/* Description */}
+                  <h3 className="text-lg font-semibold text-deep-blue">Product Views (4 Images)</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {['view1', 'view2', 'view3', 'view4'].map((view, index) => (
+                      <div key={view}>
+                        <label className="block text-sm font-medium mb-2">View {index + 1}</label>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleViewImageChange(view as 'view1' | 'view2' | 'view3' | 'view4', e)}
+                        />
+                        {viewImages[view as keyof typeof viewImages].preview && (
+                          <div className="mt-2">
+                            <img 
+                              src={viewImages[view as keyof typeof viewImages].preview} 
+                              alt={`View ${index + 1} Preview`} 
+                              className="h-24 w-24 object-cover rounded-lg border"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-deep-blue">Description</h3>
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Description
-                    </label>
                     <textarea
                       rows={4}
                       className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Product description..."
+                      placeholder="Enter detailed product description..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                   </div>
+                </div>
 
-                  {/* View Images Grid */}
-                  <div>
-                    <label className="block text-sm font-medium mb-4">
-                      Product Views (Image URLs)
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">View 1</label>
-                        <Input
-                          type="url"
-                          placeholder="View 1 Image URL"
-                          value={formData.view1_image_url}
-                          onChange={(e) => setFormData({ ...formData, view1_image_url: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">View 2</label>
-                        <Input
-                          type="url"
-                          placeholder="View 2 Image URL"
-                          value={formData.view2_image_url}
-                          onChange={(e) => setFormData({ ...formData, view2_image_url: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">View 3</label>
-                        <Input
-                          type="url"
-                          placeholder="View 3 Image URL"
-                          value={formData.view3_image_url}
-                          onChange={(e) => setFormData({ ...formData, view3_image_url: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">View 4</label>
-                        <Input
-                          type="url"
-                          placeholder="View 4 Image URL"
-                          value={formData.view4_image_url}
-                          onChange={(e) => setFormData({ ...formData, view4_image_url: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Wood and Cushion Types */}
+                {/* Customization Options */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-deep-blue">Customization Options</h3>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Wood Type
-                      </label>
+                      <label className="block text-sm font-medium mb-2">Wood Type</label>
                       <Select
                         value={formData.wood_type}
                         onValueChange={(value) => setFormData({ ...formData, wood_type: value })}
@@ -349,19 +367,16 @@ const AdminDashboard = () => {
                           <SelectValue placeholder="Select Wood Type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Oak">Oak</SelectItem>
-                          <SelectItem value="Walnut">Walnut</SelectItem>
-                          <SelectItem value="Pine">Pine</SelectItem>
-                          <SelectItem value="Maple">Maple</SelectItem>
-                          <SelectItem value="Mahogany">Mahogany</SelectItem>
-                          <SelectItem value="Teak">Teak</SelectItem>
+                          <SelectItem value="Teak">Teak (Solid Wood)</SelectItem>
+                          <SelectItem value="Walnut">Walnut (Solid Wood)</SelectItem>
+                          <SelectItem value="Pine">Pine (Solid Wood)</SelectItem>
+                          <SelectItem value="Mango">Mango (Solid Wood)</SelectItem>
+                          <SelectItem value="Plywood">Plywood</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Cushion Type
-                      </label>
+                      <label className="block text-sm font-medium mb-2">Cushion Type</label>
                       <Select
                         value={formData.cushion_type}
                         onValueChange={(value) => setFormData({ ...formData, cushion_type: value })}
@@ -374,26 +389,52 @@ const AdminDashboard = () => {
                           <SelectItem value="Foam">Foam</SelectItem>
                           <SelectItem value="Down">Down</SelectItem>
                           <SelectItem value="Cotton">Cotton</SelectItem>
-                          <SelectItem value="Wool">Wool</SelectItem>
+                          <SelectItem value="Shell">Shell</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
-                  {/* Customized Image */}
+                  {/* Customized Furniture Image */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Customized Furniture Image URL
-                    </label>
+                    <label className="block text-sm font-medium mb-2">Customized Furniture Image</label>
                     <Input
-                      type="url"
-                      placeholder="Customized furniture image URL"
-                      value={formData.customized_image_url}
-                      onChange={(e) => setFormData({ ...formData, customized_image_url: e.target.value })}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCustomImageChange}
+                    />
+                    {customImagePreview && (
+                      <div className="mt-4">
+                        <img 
+                          src={customImagePreview} 
+                          alt="Customized Preview" 
+                          className="h-32 w-48 object-cover rounded-lg border"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Price */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-deep-blue">Pricing</h3>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Price (₱)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      required
                     />
                   </div>
                 </div>
-              </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Adding Product...' : 'Add Product'}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         )}
