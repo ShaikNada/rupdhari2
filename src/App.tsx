@@ -12,6 +12,7 @@ import Services from "./pages/Services";
 import Story from "./pages/Story";
 import Contact from "./pages/Contact";
 import ThemePage from "./pages/ThemePage";
+import ProductPage from "./pages/ProductPage";
 import CategoryPage from "./pages/CategoryPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/story" element={<Story />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/themes/:themeId" element={<ThemePage />} />
+            <Route path="/product/:productId" element={<ProductPage />} />
             <Route path="/categories/:categoryId" element={<CategoryPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={

@@ -18,6 +18,9 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          cushion_type: string | null
+          customized_image_url: string | null
+          description: string | null
           id: string
           image_url: string | null
           name: string
@@ -25,10 +28,18 @@ export type Database = {
           product_number: string
           theme: string
           updated_at: string
+          view1_image_url: string | null
+          view2_image_url: string | null
+          view3_image_url: string | null
+          view4_image_url: string | null
+          wood_type: string | null
         }
         Insert: {
           category: string
           created_at?: string
+          cushion_type?: string | null
+          customized_image_url?: string | null
+          description?: string | null
           id?: string
           image_url?: string | null
           name: string
@@ -36,10 +47,18 @@ export type Database = {
           product_number: string
           theme: string
           updated_at?: string
+          view1_image_url?: string | null
+          view2_image_url?: string | null
+          view3_image_url?: string | null
+          view4_image_url?: string | null
+          wood_type?: string | null
         }
         Update: {
           category?: string
           created_at?: string
+          cushion_type?: string | null
+          customized_image_url?: string | null
+          description?: string | null
           id?: string
           image_url?: string | null
           name?: string
@@ -47,6 +66,11 @@ export type Database = {
           product_number?: string
           theme?: string
           updated_at?: string
+          view1_image_url?: string | null
+          view2_image_url?: string | null
+          view3_image_url?: string | null
+          view4_image_url?: string | null
+          wood_type?: string | null
         }
         Relationships: []
       }

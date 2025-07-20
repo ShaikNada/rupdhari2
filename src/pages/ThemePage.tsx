@@ -1,23 +1,27 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { getThemeNames } from "@/data/furnitureData";
+import { Button } from "@/components/ui/button";
+import { Filter } from "lucide-react";
+import { getThemeNames, getCategoryNames } from "@/data/furnitureData";
 import { useProducts } from "@/hooks/useProducts";
 
 const ThemePage = () => {
   const { themeId } = useParams();
   const [searchParams] = useSearchParams();
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { getProductsByTheme, loading } = useProducts();
   
   const themeNames = getThemeNames();
+  const categories = getCategoryNames();
   const themeName = themeNames[themeId || ""] || "Theme";
   const allProducts = getProductsByTheme(themeId || "");
   
-  // Filter by category if specified in URL
-  const categoryFilter = searchParams.get('category');
-  const products = categoryFilter 
-    ? allProducts.filter(product => product.category === categoryFilter)
-    : allProducts;
+  // Filter by category
+  const products = selectedCategory === "all" 
+    ? allProducts 
+    : allProducts.filter(product => product.category === selectedCategory);
 
   if (loading) {
     return (
@@ -49,6 +53,28 @@ const ThemePage = () => {
       
       {/* Products Grid */}
       <div className="container mx-auto px-6 py-20">
+        {/* Category Filter */}
+        <div className="flex flex-wrap gap-4 mb-8 justify-center">
+          <Button
+            variant={selectedCategory === "all" ? "default" : "outline"}
+            onClick={() => setSelectedCategory("all")}
+            className="transition-smooth"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            All Categories
+          </Button>
+          {Object.entries(categories).map(([key, value]) => (
+            <Button
+              key={key}
+              variant={selectedCategory === key ? "default" : "outline"}
+              onClick={() => setSelectedCategory(key)}
+              className="transition-smooth"
+            >
+              {value}
+            </Button>
+          ))}
+        </div>
+
         <div className="text-center mb-12">
           <p className="text-deep-blue/70 uppercase tracking-widest text-sm font-medium">
             {products.length} Pieces in Collection
@@ -57,8 +83,9 @@ const ThemePage = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {products.map((product) => (
-            <Card key={product.id} className="group cursor-pointer bg-card border-0 shadow-soft hover:shadow-luxury transition-all duration-500 hover:-translate-y-2 overflow-hidden">
-              <CardContent className="p-0">
+            <Link key={product.id} to={`/product/${product.id}`}>
+              <Card className="group cursor-pointer bg-card border-0 shadow-soft hover:shadow-luxury transition-all duration-500 hover:-translate-y-2 overflow-hidden">
+                <CardContent className="p-0">
                 <div className="relative aspect-square bg-taupe/20 overflow-hidden">
                   <img 
                     src={product.image} 
@@ -85,6 +112,7 @@ const ThemePage = () => {
                 </div>
               </CardContent>
             </Card>
+            </Link>
           ))}
         </div>
         

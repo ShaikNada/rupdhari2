@@ -21,7 +21,15 @@ const AdminDashboard = () => {
     product_number: '',
     theme: '',
     category: '',
-    image_url: ''
+    image_url: '',
+    description: '',
+    view1_image_url: '',
+    view2_image_url: '',
+    view3_image_url: '',
+    view4_image_url: '',
+    wood_type: '',
+    cushion_type: '',
+    customized_image_url: ''
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -56,7 +64,15 @@ const AdminDashboard = () => {
           product_number: formData.product_number,
           theme: formData.theme,
           category: formData.category,
-          image_url: formData.image_url
+          image_url: formData.image_url,
+          description: formData.description,
+          view1_image_url: formData.view1_image_url,
+          view2_image_url: formData.view2_image_url,
+          view3_image_url: formData.view3_image_url,
+          view4_image_url: formData.view4_image_url,
+          wood_type: formData.wood_type,
+          cushion_type: formData.cushion_type,
+          customized_image_url: formData.customized_image_url
         }]);
 
       if (error) throw error;
@@ -73,7 +89,15 @@ const AdminDashboard = () => {
         product_number: '',
         theme: '',
         category: '',
-        image_url: ''
+        image_url: '',
+        description: '',
+        view1_image_url: '',
+        view2_image_url: '',
+        view3_image_url: '',
+        view4_image_url: '',
+        wood_type: '',
+        cushion_type: '',
+        customized_image_url: ''
       });
       setImageFile(null);
       setImagePreview('');
@@ -246,6 +270,130 @@ const AdminDashboard = () => {
                   {loading ? 'Adding Product...' : 'Add Product'}
                 </Button>
               </form>
+
+              {/* Customization Section */}
+              <div className="mt-8 pt-8 border-t">
+                <h3 className="text-lg font-semibold mb-6">Customization Details</h3>
+                <div className="space-y-6">
+                  
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Product description..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+
+                  {/* View Images Grid */}
+                  <div>
+                    <label className="block text-sm font-medium mb-4">
+                      Product Views (Image URLs)
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">View 1</label>
+                        <Input
+                          type="url"
+                          placeholder="View 1 Image URL"
+                          value={formData.view1_image_url}
+                          onChange={(e) => setFormData({ ...formData, view1_image_url: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">View 2</label>
+                        <Input
+                          type="url"
+                          placeholder="View 2 Image URL"
+                          value={formData.view2_image_url}
+                          onChange={(e) => setFormData({ ...formData, view2_image_url: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">View 3</label>
+                        <Input
+                          type="url"
+                          placeholder="View 3 Image URL"
+                          value={formData.view3_image_url}
+                          onChange={(e) => setFormData({ ...formData, view3_image_url: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">View 4</label>
+                        <Input
+                          type="url"
+                          placeholder="View 4 Image URL"
+                          value={formData.view4_image_url}
+                          onChange={(e) => setFormData({ ...formData, view4_image_url: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Wood and Cushion Types */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Wood Type
+                      </label>
+                      <Select
+                        value={formData.wood_type}
+                        onValueChange={(value) => setFormData({ ...formData, wood_type: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Wood Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Oak">Oak</SelectItem>
+                          <SelectItem value="Walnut">Walnut</SelectItem>
+                          <SelectItem value="Pine">Pine</SelectItem>
+                          <SelectItem value="Maple">Maple</SelectItem>
+                          <SelectItem value="Mahogany">Mahogany</SelectItem>
+                          <SelectItem value="Teak">Teak</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Cushion Type
+                      </label>
+                      <Select
+                        value={formData.cushion_type}
+                        onValueChange={(value) => setFormData({ ...formData, cushion_type: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Cushion Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Polyester">Polyester</SelectItem>
+                          <SelectItem value="Foam">Foam</SelectItem>
+                          <SelectItem value="Down">Down</SelectItem>
+                          <SelectItem value="Cotton">Cotton</SelectItem>
+                          <SelectItem value="Wool">Wool</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Customized Image */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Customized Furniture Image URL
+                    </label>
+                    <Input
+                      type="url"
+                      placeholder="Customized furniture image URL"
+                      value={formData.customized_image_url}
+                      onChange={(e) => setFormData({ ...formData, customized_image_url: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
