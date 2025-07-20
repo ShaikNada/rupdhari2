@@ -1,16 +1,10 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Filter } from "lucide-react";
 import nostalgicVintage from "@/assets/nostalgic-vintage.jpg";
 import vesaraMeld from "@/assets/vesara-meld.jpg";
 import specialCollection from "@/assets/special-collection.jpg";
 import theFourth from "@/assets/the-fourth.jpg";
-import { getCategoryNames } from "@/data/furnitureData";
 
 const ThemesSection = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const categories = getCategoryNames();
 
   const themes = [
     {
@@ -54,37 +48,16 @@ const ThemesSection = () => {
           <p className="text-sm tracking-widest text-soft-brown uppercase mb-4">THEMES</p>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex flex-wrap gap-4 mb-8 justify-center">
-          <Button
-            variant={selectedCategory === "all" ? "default" : "outline"}
-            onClick={() => setSelectedCategory("all")}
-            className="transition-smooth"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            All Categories
-          </Button>
-          {Object.entries(categories).map(([key, value]) => (
-            <Button
-              key={key}
-              variant={selectedCategory === key ? "default" : "outline"}
-              onClick={() => setSelectedCategory(key)}
-              className="transition-smooth"
-            >
-              {value}
-            </Button>
-          ))}
-        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {themes.map((theme) => (
             <Link
               key={theme.id}
-              to={`${theme.path}${selectedCategory !== "all" ? `?category=${selectedCategory}` : ""}`}
+              to={theme.path}
               className="group block relative overflow-hidden rounded-xl shadow-soft hover:shadow-elegant transition-all duration-500 hover:transform hover:scale-105 hover:-translate-y-2"
             >
               {/* Theme Image with increased height */}
-              <div className="relative h-80 overflow-hidden">
+              <div className="relative h-96 overflow-hidden">
                 <img
                   src={theme.image}
                   alt={theme.name}
@@ -100,7 +73,7 @@ const ThemesSection = () => {
                     ? "top-6 left-6 right-6" 
                     : "bottom-6 left-6 right-6"
                 } z-10`}>
-                  <h3 className="text-xl font-bold text-white uppercase tracking-wide leading-tight drop-shadow-lg group-hover:text-primary-glow transition-all duration-300">
+                  <h3 className="text-xl font-brahmos font-bold text-white uppercase tracking-wide leading-tight drop-shadow-lg group-hover:text-primary-glow transition-all duration-300">
                     {theme.name}
                   </h3>
                   <p className="text-sm text-white/90 mt-2 leading-relaxed drop-shadow-md opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">

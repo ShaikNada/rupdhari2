@@ -87,7 +87,8 @@ export default {
 			},
 			fontFamily: {
 				'serif': ['Playfair Display', 'serif'],
-				'sans': ['Inter', 'sans-serif']
+				'sans': ['Inter', 'sans-serif'],
+				'brahmos': ['Bai Jamjuree', 'sans-serif']
 			},
 			transitionTimingFunction: {
 				'smooth': 'var(--transition-smooth)'
