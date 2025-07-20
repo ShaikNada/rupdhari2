@@ -1,14 +1,27 @@
 import { useParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { getProductsByCategory, getCategoryNames } from "@/data/furnitureData";
+import { getCategoryNames } from "@/data/furnitureData";
+import { useProducts } from "@/hooks/useProducts";
 
 const CategoryPage = () => {
   const { categoryId } = useParams();
+  const { getProductsByCategory, loading } = useProducts();
   
   const categoryNames = getCategoryNames();
   const categoryName = categoryNames[categoryId || ""] || "Category";
   const products = getProductsByCategory(categoryId || "");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-warm-beige">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <p className="text-deep-blue/60">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-warm-beige">
@@ -59,9 +72,9 @@ const CategoryPage = () => {
                   <h3 className="font-serif text-xl text-deep-blue group-hover:text-warm-gold transition-colors duration-300">
                     {product.name}
                   </h3>
-                  <p className="font-semibold text-lg text-rich-brown">
-                    {product.price}
-                  </p>
+                   <p className="font-semibold text-lg text-rich-brown">
+                     ₱{product.price}
+                   </p>
                 </div>
               </CardContent>
             </Card>
