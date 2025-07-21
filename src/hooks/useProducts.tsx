@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/data/furnitureData';
@@ -16,6 +17,8 @@ export const useProducts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      console.log('All products fetched from database:', data);
 
       // Transform database products to match our Product interface
       const transformedProducts: Product[] = (data || []).map(product => ({
