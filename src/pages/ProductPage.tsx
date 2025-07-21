@@ -10,7 +10,7 @@ import { Minus, Plus } from "lucide-react";
 import { ContactFormDialog } from "@/components/ContactFormDialog";
 
 const ProductPage = () => {
-  const { id } = useParams();
+  const { productName } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedWood, setSelectedWood] = useState("teak");
@@ -19,15 +19,18 @@ const ProductPage = () => {
 
   // Fetch product and its variations
   const { data: products, isLoading } = useQuery({
-    queryKey: ['product', id, selectedWood, selectedCushioning],
+    queryKey: ['product', productName, selectedWood, selectedCushioning],
     queryFn: async () => {
-      if (!id) return null;
+      if (!productName) return null;
       
-      // First get the main product
+      const decodedName = decodeURIComponent(productName);
+      
+      // First get the main product (is_main_variant = true)
       const { data: mainProduct, error: mainError } = await supabase
         .from('products')
         .select('*')
-        .eq('id', id)
+        .eq('name', decodedName)
+        .eq('is_main_variant', true)
         .single();
       
       if (mainError) throw mainError;
@@ -36,7 +39,8 @@ const ProductPage = () => {
       const { data: variations, error: variationsError } = await supabase
         .from('products')
         .select('*')
-        .or(`and(name.eq.${mainProduct.name},product_number.eq.${mainProduct.product_number})`);
+        .eq('name', decodedName)
+        .eq('product_number', mainProduct.product_number);
       
       if (variationsError) throw variationsError;
       
