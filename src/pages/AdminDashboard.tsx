@@ -313,7 +313,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Price (₹) *</label>
+                    <label className="block text-sm font-medium mb-2">Price (₱) *</label>
                     <Input
                       type="number"
                       step="0.01"

@@ -138,164 +138,157 @@ const ProductPage = () => {
           </div>
         </div>
 
-        {/* Main Content - Enhanced Two Column Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-16">
+        {/* Main Content - Two Column Layout Based on Reference */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-12">
           
-          {/* Left Side - Product Images Grid with Animation */}
+          {/* Left Side - Product Images and Description */}
           <div className="space-y-8">
-            {/* Aesthetic 4 View Images Grid */}
-            <div className="grid grid-cols-2 gap-6 animate-fade-in">
-              {[
-                { src: currentProduct.view1_image_url, alt: "Front View", label: "01" },
-                { src: currentProduct.view2_image_url, alt: "Side View", label: "02" },
-                { src: currentProduct.view3_image_url, alt: "Back View", label: "03" },
-                { src: currentProduct.view4_image_url, alt: "Detail View", label: "04" }
-              ].map((view, index) => (
-                <div key={index} className="group relative overflow-hidden rounded-2xl shadow-elegant hover-scale">
-                  <div className="aspect-square bg-gradient-to-br from-taupe/10 to-warm-beige/20 overflow-hidden">
+            {/* 4 View Images Grid - Matching Reference Layout */}
+            <div className="grid grid-cols-[200px,1fr] gap-6">
+              {/* Main First Image */}
+              <div className="aspect-[4/5] bg-gradient-to-br from-taupe/10 to-warm-beige/20 rounded-lg overflow-hidden shadow-soft">
+                <img 
+                  src={currentProduct.view1_image_url || currentProduct.image_url} 
+                  alt="Main View"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Right Grid - 3 smaller images */}
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { src: currentProduct.view2_image_url, alt: "View 2" },
+                  { src: currentProduct.view3_image_url, alt: "View 3" },
+                  { src: currentProduct.view4_image_url, alt: "View 4" }
+                ].map((view, index) => (
+                  <div key={index} className="aspect-[3/2] bg-gradient-to-br from-taupe/10 to-warm-beige/20 rounded-lg overflow-hidden shadow-soft">
                     <img 
                       src={view.src || currentProduct.image_url} 
                       alt={view.alt}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-deep-blue px-3 py-1 rounded-full text-sm font-medium">
-                    {view.label}
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            {/* Enhanced Description Section */}
+            {/* Description Section */}
             {currentProduct.description && (
-              <div className="mt-12 bg-white/60 backdrop-blur-sm p-8 rounded-2xl shadow-soft animate-fade-in">
-                <h3 className="font-serif text-2xl text-deep-blue mb-6 flex items-center">
-                  <span className="w-3 h-3 bg-warm-gold rounded-full mr-3"></span>
-                  Description
-                </h3>
-                <p className="text-deep-blue/80 leading-relaxed text-lg">{currentProduct.description}</p>
+              <div className="bg-white/60 backdrop-blur-sm p-6 rounded-lg">
+                <h3 className="font-semibold text-deep-blue mb-3">Description</h3>
+                <p className="text-deep-blue/80 text-sm leading-relaxed">{currentProduct.description}</p>
               </div>
             )}
           </div>
 
-          {/* Right Side - Enhanced Customization Panel */}
-          <div className="space-y-8">
-            <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-elegant animate-fade-in">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-serif text-deep-blue mb-3">Crafted to Your Specifications</h2>
-                <p className="text-deep-blue/70 text-lg">Personalization at Your Fingertips</p>
-              </div>
+          {/* Right Side - Customization Panel Matching Reference */}
+          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-elegant">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-deep-blue mb-1">Crafted to Your Specifications</h2>
+              <p className="text-deep-blue/60 text-sm">Personalization at Your Fingertips</p>
+            </div>
+            
+            {/* Large Customized Image */}
+            <div className="aspect-square bg-gradient-to-br from-taupe/10 to-warm-beige/20 rounded-lg overflow-hidden shadow-soft mb-6">
+              <img 
+                src={currentProduct.customized_image_url || currentProduct.image_url} 
+                alt="Customized furniture"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Wood Selection - Small Options */}
+            <div className="mb-6">
+              <h4 className="font-medium text-deep-blue mb-3 flex items-center">
+                <span className="w-2 h-2 bg-warm-gold rounded-full mr-2"></span>
+                Wood
+              </h4>
               
-              {/* Large Customized Image with Enhanced Styling */}
-              <div className="relative mb-10 group">
-                <div className="aspect-square bg-gradient-to-br from-taupe/10 via-warm-beige/20 to-soft-brown/10 rounded-2xl overflow-hidden shadow-elegant">
-                  <img 
-                    src={currentProduct.customized_image_url || currentProduct.image_url} 
-                    alt="Customized furniture"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+              <div className="space-y-3">
+                {/* Solid Wood Options */}
+                <div>
+                  <p className="text-xs text-deep-blue/60 mb-2">Solid wood</p>
+                  <div className="flex gap-2">
+                    {['Teak', 'Walnut', 'Pine', 'Mango'].map((wood) => (
+                      <button
+                        key={wood}
+                        onClick={() => setSelectedWood(woodTypes[wood as keyof typeof woodTypes])}
+                        className={`w-12 h-12 rounded border-2 transition-all duration-200 ${
+                          selectedWood === woodTypes[wood as keyof typeof woodTypes]
+                            ? 'border-warm-gold bg-warm-gold/10' 
+                            : 'border-taupe/30 hover:border-warm-gold/50'
+                        }`}
+                      >
+                        <div className="w-full h-8 bg-gradient-to-br from-amber-200 to-amber-400 rounded-sm mb-1"></div>
+                        <p className="text-[8px] text-deep-blue font-medium">{wood}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-
-              {/* Enhanced Wood Selection */}
-              <div className="mb-10">
-                <h4 className="font-semibold text-deep-blue mb-6 flex items-center text-lg">
-                  <span className="w-3 h-3 bg-warm-gold rounded-full mr-3"></span>
-                  Wood Selection
-                </h4>
                 
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-sm text-deep-blue/70 mb-4 font-medium">Solid Wood Options</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      {['Teak', 'Walnut', 'Pine', 'Mango'].map((wood) => (
-                        <button
-                          key={wood}
-                          onClick={() => setSelectedWood(woodTypes[wood as keyof typeof woodTypes])}
-                          className={`group p-4 rounded-xl border-2 transition-all duration-300 hover-scale ${
-                            selectedWood === woodTypes[wood as keyof typeof woodTypes]
-                              ? 'border-warm-gold bg-warm-gold/10 shadow-soft' 
-                              : 'border-taupe/30 hover:border-warm-gold/50 hover:shadow-soft'
-                          }`}
-                        >
-                          <div className="aspect-square bg-gradient-to-br from-amber-200 via-amber-300 to-amber-400 rounded-lg mb-3 shadow-soft group-hover:shadow-elegant transition-shadow duration-300"></div>
-                          <p className="text-sm text-deep-blue font-semibold">{wood}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-center py-2">
-                    <div className="flex items-center space-x-4">
-                      <div className="h-px bg-taupe/30 w-16"></div>
-                      <span className="text-deep-blue/50 font-medium text-sm">OR</span>
-                      <div className="h-px bg-taupe/30 w-16"></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <button
-                      onClick={() => setSelectedWood('plywood')}
-                      className={`w-full p-6 rounded-xl border-2 transition-all duration-300 text-left hover-scale ${
-                        selectedWood === 'plywood'
-                          ? 'border-warm-gold bg-warm-gold/10 shadow-soft' 
-                          : 'border-taupe/30 hover:border-warm-gold/50 hover:shadow-soft'
-                      }`}
-                    >
-                      <p className="font-semibold text-deep-blue mb-2">Plywood</p>
-                      <p className="text-sm text-deep-blue/70 leading-relaxed">Endless veneer shade options tailored to your taste, ensuring a seamless blend with your overall design aesthetic.</p>
-                    </button>
-                  </div>
+                {/* Plywood Option */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-deep-blue/60">OR</span>
+                  <button
+                    onClick={() => setSelectedWood('plywood')}
+                    className={`px-4 py-2 rounded border text-xs transition-all duration-200 ${
+                      selectedWood === 'plywood'
+                        ? 'border-warm-gold bg-warm-gold/10 text-deep-blue' 
+                        : 'border-taupe/30 text-deep-blue/70 hover:border-warm-gold/50'
+                    }`}
+                  >
+                    Plywood
+                  </button>
                 </div>
-              </div>
-
-              {/* Enhanced Cushioning Selection */}
-              <div className="mb-8">
-                <h4 className="font-semibold text-deep-blue mb-6 flex items-center text-lg">
-                  <span className="w-3 h-3 bg-warm-gold rounded-full mr-3"></span>
-                  Cushioning Options
-                </h4>
-                <div className="grid grid-cols-3 gap-4">
-                  {Object.entries(cushionTypes).map(([display, value]) => (
-                    <button
-                      key={value}
-                      onClick={() => setSelectedCushion(value)}
-                      className={`group p-4 rounded-xl border-2 transition-all duration-300 hover-scale ${
-                        selectedCushion === value
-                          ? 'border-warm-gold bg-warm-gold/10 shadow-soft' 
-                          : 'border-taupe/30 hover:border-warm-gold/50 hover:shadow-soft'
-                      }`}
-                    >
-                      <div className="aspect-square bg-gradient-to-br from-green-200 via-green-300 to-green-400 rounded-lg mb-3 shadow-soft group-hover:shadow-elegant transition-shadow duration-300"></div>
-                      <p className="text-xs text-deep-blue font-semibold">{display}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-warm-gold/10 p-4 rounded-xl mb-8">
-                <p className="text-sm text-deep-blue/80 flex items-center">
-                  <span className="w-2 h-2 bg-warm-gold rounded-full mr-3"></span>
-                  Size can be customized based on customer preferences.
+                <p className="text-[10px] text-deep-blue/60 leading-tight">
+                  Endless veneer shade options tailored to your taste.
                 </p>
-              </div>
-
-              {/* Enhanced Price Display */}
-              <div className="text-center py-8 border-t border-warm-gold/20">
-                <div className="bg-gradient-to-r from-rich-brown/10 to-warm-gold/10 p-6 rounded-xl">
-                  <p className="text-4xl font-bold bg-gradient-to-r from-rich-brown to-warm-gold bg-clip-text text-transparent">
-                    ₱{currentProduct.price.toLocaleString()}
-                  </p>
-                </div>
               </div>
             </div>
 
-            {/* Enhanced Contact Button */}
+            {/* Cushioning Selection - Small Options */}
+            <div className="mb-6">
+              <h4 className="font-medium text-deep-blue mb-3 flex items-center">
+                <span className="w-2 h-2 bg-warm-gold rounded-full mr-2"></span>
+                Cushioning
+              </h4>
+              <div className="flex gap-2 flex-wrap">
+                {Object.entries(cushionTypes).map(([display, value]) => (
+                  <button
+                    key={value}
+                    onClick={() => setSelectedCushion(value)}
+                    className={`w-12 h-12 rounded border-2 transition-all duration-200 ${
+                      selectedCushion === value
+                        ? 'border-warm-gold bg-warm-gold/10' 
+                        : 'border-taupe/30 hover:border-warm-gold/50'
+                    }`}
+                  >
+                    <div className="w-full h-8 bg-gradient-to-br from-green-200 to-green-400 rounded-sm mb-1"></div>
+                    <p className="text-[8px] text-deep-blue font-medium">{display}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Size Note */}
+            <div className="bg-warm-gold/10 p-3 rounded mb-6">
+              <p className="text-xs text-deep-blue/70 flex items-center">
+                <span className="w-1 h-1 bg-warm-gold rounded-full mr-2"></span>
+                Size can be customized based on customer preferences.
+              </p>
+            </div>
+
+            {/* Price Display */}
+            <div className="text-center py-6 border-t border-warm-gold/20 mb-6">
+              <p className="text-3xl font-bold bg-gradient-to-r from-rich-brown to-warm-gold bg-clip-text text-transparent">
+                ₱{currentProduct.price.toLocaleString()}
+              </p>
+            </div>
+
+            {/* Contact Button */}
             <Button 
               size="lg" 
-              className="w-full font-semibold text-xl py-8 bg-gradient-to-r from-warm-gold to-rich-brown hover:from-rich-brown hover:to-warm-gold transition-all duration-300 hover-scale shadow-elegant hover:shadow-glow"
+              className="w-full font-semibold bg-gradient-to-r from-warm-gold to-rich-brown hover:from-rich-brown hover:to-warm-gold transition-all duration-300"
             >
               Contact for Custom Order
             </Button>
