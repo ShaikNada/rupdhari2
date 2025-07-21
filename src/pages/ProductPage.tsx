@@ -1,6 +1,6 @@
 
 import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -17,10 +17,11 @@ const ProductPage = () => {
   const [selectedWood, setSelectedWood] = useState("teak");
   const [selectedCushioning, setSelectedCushioning] = useState("polyester");
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [mainImage, setMainImage] = useState("");
 
   // Fetch product and its variations
   const { data: products, isLoading } = useQuery({
-    queryKey: ['product', productName, selectedWood, selectedCushioning],
+    queryKey: ['product', productName],
     queryFn: async () => {
       if (!productName) return null;
       
@@ -32,9 +33,10 @@ const ProductPage = () => {
         .select('*')
         .eq('name', decodedName)
         .eq('is_main_variant', true)
-        .single();
+        .maybeSingle();
       
       if (mainError) throw mainError;
+      if (!mainProduct) return null;
       
       // Then get all variations with the same name and product_number
       const { data: variations, error: variationsError } = await supabase
@@ -48,6 +50,21 @@ const ProductPage = () => {
       return { mainProduct, variations: variations || [] };
     },
   });
+
+  // Update main image when customization changes
+  useEffect(() => {
+    if (products && products.variations) {
+      const currentVariant = products.variations.find(v => 
+        v.wood_type === selectedWood && v.cushion_type === selectedCushioning && !v.is_main_variant
+      );
+      
+      if (currentVariant && currentVariant.customized_image_url) {
+        setMainImage(currentVariant.customized_image_url);
+      } else if (products.mainProduct.image_url) {
+        setMainImage(products.mainProduct.image_url);
+      }
+    }
+  }, [selectedWood, selectedCushioning, products]);
 
   if (isLoading) {
     return (
@@ -72,16 +89,17 @@ const ProductPage = () => {
   
   // Find the variation that matches selected options or fall back to main product
   const currentVariant = variations.find(v => 
-    v.wood_type === selectedWood && v.cushion_type === selectedCushioning
+    v.wood_type === selectedWood && v.cushion_type === selectedCushioning && !v.is_main_variant
   ) || mainProduct;
 
-  // Product images - using the view images from the current variant
+  // Product images - using the view images from any variant that has them
+  const variantWithViews = variations.find(v => v.view1_image_url) || mainProduct;
   const productImages = [
-    currentVariant.customized_image_url,
-    currentVariant.view1_image_url,
-    currentVariant.view2_image_url,
-    currentVariant.view3_image_url,
-    currentVariant.view4_image_url,
+    mainImage || mainProduct.image_url,
+    variantWithViews.view1_image_url,
+    variantWithViews.view2_image_url,
+    variantWithViews.view3_image_url,
+    variantWithViews.view4_image_url,
   ].filter(Boolean);
 
   const handleQuantityChange = (change: number) => {
@@ -192,7 +210,6 @@ const ProductPage = () => {
 
             {/* Right - Product Information */}
             <div className="space-y-8">
-              {/* Product Header */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary" className="px-3 py-1">
@@ -223,14 +240,12 @@ const ProductPage = () => {
                 </div>
               </div>
 
-              {/* Product Description */}
               <div className="prose prose-lg max-w-none">
                 <p className="text-muted-foreground leading-relaxed text-lg">
                   {mainProduct.description || "Experience exceptional craftsmanship with this beautiful piece of furniture. Each item is carefully crafted with attention to detail and premium materials, designed to enhance your living space with timeless elegance."}
                 </p>
               </div>
 
-              {/* Quick Actions */}
               <div className="flex gap-4">
                 <Button variant="outline" size="lg" className="flex-1">
                   <Heart className="w-5 h-5 mr-2" />
@@ -241,10 +256,8 @@ const ProductPage = () => {
                 </Button>
               </div>
 
-              {/* Quantity and Order */}
               <Card className="p-6 bg-card/50 backdrop-blur-sm">
                 <div className="space-y-6">
-                  {/* Quantity Selector */}
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-lg">Quantity:</span>
                     <div className="flex items-center border rounded-xl bg-background">
@@ -269,7 +282,6 @@ const ProductPage = () => {
                     </div>
                   </div>
 
-                  {/* Contact Button */}
                   <Button 
                     className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
                     onClick={() => setIsContactFormOpen(true)}
@@ -301,9 +313,9 @@ const ProductPage = () => {
                     <h3 className="text-xl font-semibold mb-4 text-center">Your Configuration</h3>
                     <div className="aspect-square bg-muted/30 rounded-2xl overflow-hidden shadow-elegant">
                       <img 
-                        src={currentVariant.customized_image_url || currentVariant.image_url} 
+                        src={mainImage || mainProduct.image_url} 
                         alt="Customized view"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-all duration-500"
                       />
                     </div>
                     <div className="mt-4 p-4 bg-background/50 rounded-xl">
@@ -315,6 +327,10 @@ const ProductPage = () => {
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Cushioning:</span>
                           <span className="font-medium capitalize">{selectedCushioning}</span>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t">
+                          <span className="text-muted-foreground">Price:</span>
+                          <span className="font-bold text-primary">₹{currentVariant.price?.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -328,57 +344,84 @@ const ProductPage = () => {
                     <p className="text-muted-foreground mb-6">Choose from solid wood or engineered options</p>
                   </div>
                   
-                  {/* Solid Wood Options */}
                   <div className="space-y-4">
                     <h4 className="font-medium text-lg">Solid Wood</h4>
                     <div className="grid grid-cols-2 gap-3">
-                      {woodOptions.filter(wood => wood.type === 'solid').map((wood) => (
-                        <button
-                          key={wood.value}
-                          onClick={() => setSelectedWood(wood.value)}
-                          className={`group p-4 rounded-xl border-2 transition-all text-left ${
-                            selectedWood === wood.value
-                              ? 'border-primary bg-primary/5 shadow-lg scale-105' 
-                              : 'border-border hover:border-primary/50 hover:shadow-md'
-                          }`}
-                        >
-                          <div className="aspect-square bg-gradient-to-br from-amber-100 to-amber-300 rounded-lg mb-3 flex items-center justify-center">
-                            <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-amber-800 rounded"></div>
-                          </div>
-                          <div className="space-y-1">
-                            <h5 className="font-medium">{wood.name}</h5>
-                            <p className="text-xs text-muted-foreground">{wood.description}</p>
-                          </div>
-                        </button>
-                      ))}
+                      {woodOptions.filter(wood => wood.type === 'solid').map((wood) => {
+                        // Find variation image for this wood with current cushioning
+                        const variation = variations.find(v => 
+                          v.wood_type === wood.value && v.cushion_type === selectedCushioning && !v.is_main_variant
+                        );
+                        
+                        return (
+                          <button
+                            key={wood.value}
+                            onClick={() => setSelectedWood(wood.value)}
+                            className={`group p-3 rounded-xl border-2 transition-all text-left ${
+                              selectedWood === wood.value
+                                ? 'border-primary bg-primary/5 shadow-lg scale-105' 
+                                : 'border-border hover:border-primary/50 hover:shadow-md'
+                            }`}
+                          >
+                            <div className="aspect-square bg-gradient-to-br from-amber-100 to-amber-300 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                              {variation?.customized_image_url ? (
+                                <img 
+                                  src={variation.customized_image_url} 
+                                  alt={wood.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-amber-800 rounded"></div>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <h5 className="font-medium text-sm">{wood.name}</h5>
+                              <p className="text-xs text-muted-foreground">{wood.description}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Engineered Wood */}
                   <div className="space-y-4">
                     <h4 className="font-medium text-lg">Engineered Wood</h4>
                     <div className="grid grid-cols-1 gap-3">
-                      {woodOptions.filter(wood => wood.type === 'engineered').map((wood) => (
-                        <button
-                          key={wood.value}
-                          onClick={() => setSelectedWood(wood.value)}
-                          className={`group p-4 rounded-xl border-2 transition-all text-left ${
-                            selectedWood === wood.value
-                              ? 'border-primary bg-primary/5 shadow-lg scale-105' 
-                              : 'border-border hover:border-primary/50 hover:shadow-md'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-300 rounded-lg flex items-center justify-center">
-                              <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded"></div>
+                      {woodOptions.filter(wood => wood.type === 'engineered').map((wood) => {
+                        const variation = variations.find(v => 
+                          v.wood_type === wood.value && v.cushion_type === selectedCushioning && !v.is_main_variant
+                        );
+                        
+                        return (
+                          <button
+                            key={wood.value}
+                            onClick={() => setSelectedWood(wood.value)}
+                            className={`group p-4 rounded-xl border-2 transition-all text-left ${
+                              selectedWood === wood.value
+                                ? 'border-primary bg-primary/5 shadow-lg scale-105' 
+                                : 'border-border hover:border-primary/50 hover:shadow-md'
+                            }`}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
+                                {variation?.customized_image_url ? (
+                                  <img 
+                                    src={variation.customized_image_url} 
+                                    alt={wood.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded"></div>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <h5 className="font-medium">{wood.name}</h5>
+                                <p className="text-xs text-muted-foreground">{wood.description}</p>
+                              </div>
                             </div>
-                            <div className="space-y-1">
-                              <h5 className="font-medium">{wood.name}</h5>
-                              <p className="text-xs text-muted-foreground">{wood.description}</p>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -391,27 +434,41 @@ const ProductPage = () => {
                   </div>
                   
                   <div className="space-y-3">
-                    {cushioningOptions.map((cushion) => (
-                      <button
-                        key={cushion.value}
-                        onClick={() => setSelectedCushioning(cushion.value)}
-                        className={`group w-full p-4 rounded-xl border-2 transition-all text-left ${
-                          selectedCushioning === cushion.value
-                            ? 'border-primary bg-primary/5 shadow-lg scale-105' 
-                            : 'border-border hover:border-primary/50 hover:shadow-md'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-300 rounded-lg flex items-center justify-center">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded"></div>
+                    {cushioningOptions.map((cushion) => {
+                      const variation = variations.find(v => 
+                        v.wood_type === selectedWood && v.cushion_type === cushion.value && !v.is_main_variant
+                      );
+                      
+                      return (
+                        <button
+                          key={cushion.value}
+                          onClick={() => setSelectedCushioning(cushion.value)}
+                          className={`group w-full p-3 rounded-xl border-2 transition-all text-left ${
+                            selectedCushioning === cushion.value
+                              ? 'border-primary bg-primary/5 shadow-lg scale-105' 
+                              : 'border-border hover:border-primary/50 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-300 rounded-lg flex items-center justify-center overflow-hidden">
+                              {variation?.customized_image_url ? (
+                                <img 
+                                  src={variation.customized_image_url} 
+                                  alt={cushion.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-800 rounded"></div>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <h5 className="font-medium text-sm">{cushion.name}</h5>
+                              <p className="text-xs text-muted-foreground">{cushion.description}</p>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <h5 className="font-medium">{cushion.name}</h5>
-                            <p className="text-xs text-muted-foreground">{cushion.description}</p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

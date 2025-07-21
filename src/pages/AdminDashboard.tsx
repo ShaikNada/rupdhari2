@@ -47,8 +47,12 @@ const AdminDashboard = () => {
     cushion_type: '',
     customized_image_url: '',
     price: '',
-    is_main_variant: false
+    is_main_variant: false,
+    variation_count: 1
   });
+
+  // New states for variation images
+  const [variationImages, setVariationImages] = useState<{[key: string]: {file: File | null, preview: string}}>({});
 
   const [cardImageFile, setCardImageFile] = useState<File | null>(null);
   const [cardImagePreview, setCardImagePreview] = useState<string>('');
@@ -65,6 +69,41 @@ const AdminDashboard = () => {
 
   const themes = getThemeNames();
   const categories = getCategoryNames();
+
+  // Wood and cushioning options
+  const woodOptions = ['teak', 'walnut', 'pine', 'mango', 'plywood'];
+  const cushionOptions = ['polyester', 'foam', 'down', 'cotton', 'shell'];
+
+  // Generate variation combinations
+  const generateVariationCombinations = () => {
+    const combinations: Array<{wood: string, cushion: string, key: string}> = [];
+    woodOptions.forEach(wood => {
+      cushionOptions.forEach(cushion => {
+        combinations.push({
+          wood,
+          cushion,
+          key: `${wood}_${cushion}`
+        });
+      });
+    });
+    return combinations;
+  };
+
+  // Handle variation image upload
+  const handleVariationImageChange = (variationKey: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setVariationImages(prev => ({
+          ...prev,
+          [variationKey]: { file, preview: result }
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Card image handler
   const handleCardImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,13 +211,13 @@ const AdminDashboard = () => {
     }
   };
 
-  // Submit product variation
+  // Submit product variations (bulk create all combinations)
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Find the main product to get the base details
+      // Find the main product
       const selectedMainProduct = products.find(p => 
         p.name === productData.name && p.product_number === productData.product_number
       );
@@ -187,34 +226,49 @@ const AdminDashboard = () => {
         throw new Error("Please create the main product first before adding variations");
       }
 
+      // Create all variations
+      const variations = generateVariationCombinations();
+      const variationsToInsert = [];
+
+      for (const variation of variations) {
+        const variationImage = variationImages[variation.key];
+        if (variationImage && variationImage.preview) {
+          variationsToInsert.push({
+            name: productData.name,
+            price: parseFloat(productData.price),
+            product_number: productData.product_number,
+            theme: selectedMainProduct.theme,
+            category: selectedMainProduct.category,
+            image_url: variationImage.preview,
+            description: productData.description,
+            view1_image_url: productData.view1_image_url,
+            view2_image_url: productData.view2_image_url,
+            view3_image_url: productData.view3_image_url,
+            view4_image_url: productData.view4_image_url,
+            wood_type: variation.wood,
+            cushion_type: variation.cushion,
+            customized_image_url: variationImage.preview,
+            is_main_variant: false
+          });
+        }
+      }
+
+      if (variationsToInsert.length === 0) {
+        throw new Error("Please upload at least one variation image");
+      }
+
       const { error } = await supabase
         .from('products')
-        .insert([{
-          name: productData.name,
-          price: parseFloat(productData.price),
-          product_number: productData.product_number,
-          theme: selectedMainProduct.theme,
-          category: selectedMainProduct.category,
-          image_url: productData.view1_image_url || productData.customized_image_url,
-          description: productData.description,
-          view1_image_url: productData.view1_image_url,
-          view2_image_url: productData.view2_image_url,
-          view3_image_url: productData.view3_image_url,
-          view4_image_url: productData.view4_image_url,
-          wood_type: productData.wood_type,
-          cushion_type: productData.cushion_type,
-          customized_image_url: productData.customized_image_url,
-          is_main_variant: false
-        }]);
+        .insert(variationsToInsert);
 
       if (error) throw error;
 
       toast({
-        title: "Product Variation Created",
-        description: "Product variation with customization options has been created",
+        title: "Product Variations Created",
+        description: `${variationsToInsert.length} product variations have been created`,
       });
 
-      // Reset product form
+      // Reset forms
       setProductData({
         name: '',
         product_number: '',
@@ -227,7 +281,8 @@ const AdminDashboard = () => {
         cushion_type: '',
         customized_image_url: '',
         price: '',
-        is_main_variant: false
+        is_main_variant: false,
+        variation_count: 1
       });
       setViewImages({
         view1: { file: null, preview: '' },
@@ -235,6 +290,7 @@ const AdminDashboard = () => {
         view3: { file: null, preview: '' },
         view4: { file: null, preview: '' }
       });
+      setVariationImages({});
       setCustomImageFile(null);
       setCustomImagePreview('');
       refetch();
@@ -249,7 +305,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Fetch orders
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
@@ -279,12 +334,10 @@ const AdminDashboard = () => {
     fetchOrders();
   }, []);
 
-  // Get main products for variation selection
   const mainProducts = products.filter(p => p.name && p.product_number);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
-      {/* Premium Admin Header */}
       <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
@@ -350,7 +403,6 @@ const AdminDashboard = () => {
 
         {activeTab === 'post' && (
           <div className="space-y-8">
-            {/* Section 1: Main Product Card */}
             <Card className="border-0 shadow-xl overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8">
                 <div className="flex items-center space-x-3">
@@ -365,7 +417,6 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent className="p-8">
                 <form onSubmit={handleCardSubmit} className="space-y-6">
-                  {/* Image Upload */}
                   <div className="space-y-4">
                     <Label className="text-base font-medium">Main Product Image</Label>
                     <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
@@ -398,7 +449,6 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Form Fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="card-name">Product Name</Label>
@@ -485,7 +535,6 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Section 2: Product Variations */}
             <Card className="border-0 shadow-xl overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-secondary/10 via-secondary/5 to-transparent p-8">
                 <div className="flex items-center space-x-3">
@@ -494,14 +543,13 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <CardTitle className="text-2xl">Step 2: Add Product Variations</CardTitle>
-                    <p className="text-muted-foreground mt-1">Create customized variations with different wood types and cushioning</p>
+                    <p className="text-muted-foreground mt-1">Upload images for different wood and cushioning combinations</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-8">
                 <form onSubmit={handleProductSubmit} className="space-y-8">
-                  {/* Product Selection */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label>Select Existing Product</Label>
                       <Select
@@ -536,11 +584,20 @@ const AdminDashboard = () => {
                         required
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Textarea
+                        rows={2}
+                        placeholder="Product description..."
+                        value={productData.description}
+                        onChange={(e) => setProductData({ ...productData, description: e.target.value })}
+                        className="resize-none"
+                      />
+                    </div>
                   </div>
 
-                  {/* Product Views */}
                   <div className="space-y-4">
-                    <Label className="text-base font-medium">Product View Images</Label>
+                    <Label className="text-base font-medium">Product View Images (Common for all variations)</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {['view1', 'view2', 'view3', 'view4'].map((view, index) => (
                         <div key={view} className="space-y-2">
@@ -572,109 +629,61 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <Label>Product Description</Label>
-                    <Textarea
-                      rows={4}
-                      placeholder="Describe the craftsmanship, materials, and unique features of this variation..."
-                      value={productData.description}
-                      onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-                      className="resize-none"
-                    />
-                  </div>
-
-                  {/* Customized Furniture Image */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-medium">Customized Configuration Image</Label>
-                    <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCustomImageChange}
-                        className="hidden"
-                        id="custom-image-upload"
-                        required
-                      />
-                      <Label htmlFor="custom-image-upload" className="cursor-pointer">
-                        <div className="space-y-3">
-                          {customImagePreview ? (
-                            <img 
-                              src={customImagePreview} 
-                              alt="Customized Preview" 
-                              className="h-40 w-60 object-cover rounded-lg mx-auto shadow-lg"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto">
-                              <Upload className="w-8 h-8 text-secondary" />
-                            </div>
-                          )}
-                          <p className="text-sm text-muted-foreground">
-                            {customImagePreview ? 'Click to change customized image' : 'Upload the final customized configuration image'}
-                          </p>
-                        </div>
-                      </Label>
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <Label className="text-xl font-semibold">Customization Variation Images</Label>
+                      <p className="text-muted-foreground mt-2">Upload images for each wood type and cushioning combination</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Total combinations: {woodOptions.length} wood types × {cushionOptions.length} cushioning types = {woodOptions.length * cushionOptions.length} variations
+                      </p>
                     </div>
-                  </div>
 
-                  {/* Customization Options */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Wood Options */}
-                    <div className="space-y-4">
-                      <Label className="text-base font-medium">Wood Type</Label>
-                      <RadioGroup 
-                        value={productData.wood_type} 
-                        onValueChange={(value) => setProductData({...productData, wood_type: value})}
-                        className="space-y-4"
-                      >
-                        <div className="space-y-3">
-                          <p className="text-sm font-medium text-muted-foreground">Solid Wood</p>
-                          <div className="grid grid-cols-2 gap-3">
-                            {['teak', 'walnut', 'pine', 'mango'].map((wood) => (
-                              <Label 
-                                key={wood} 
-                                className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                              >
-                                <RadioGroupItem value={wood} />
-                                <span className="capitalize">{wood}</span>
-                              </Label>
-                            ))}
+                    <div className="space-y-8">
+                      {woodOptions.map((wood) => (
+                        <div key={wood} className="space-y-4">
+                          <h3 className="text-lg font-semibold capitalize border-b pb-2">{wood} Wood Variations</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            {cushionOptions.map((cushion) => {
+                              const variationKey = `${wood}_${cushion}`;
+                              return (
+                                <div key={variationKey} className="space-y-2">
+                                  <div className="aspect-square border-2 border-dashed border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors">
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleVariationImageChange(variationKey, e)}
+                                      className="hidden"
+                                      id={`variation-${variationKey}`}
+                                    />
+                                    <Label htmlFor={`variation-${variationKey}`} className="cursor-pointer h-full flex items-center justify-center">
+                                      {variationImages[variationKey]?.preview ? (
+                                        <img 
+                                          src={variationImages[variationKey].preview} 
+                                          alt={`${wood} with ${cushion}`} 
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="text-center p-2">
+                                          <Upload className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </Label>
+                                  </div>
+                                  <p className="text-xs text-center text-muted-foreground capitalize">
+                                    {wood} + {cushion}
+                                  </p>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-3">Engineered Wood</p>
-                          <Label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                            <RadioGroupItem value="plywood" />
-                            <span>Plywood</span>
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {/* Cushioning Options */}
-                    <div className="space-y-4">
-                      <Label className="text-base font-medium">Cushioning Type</Label>
-                      <RadioGroup 
-                        value={productData.cushion_type} 
-                        onValueChange={(value) => setProductData({...productData, cushion_type: value})}
-                        className="space-y-3"
-                      >
-                        {['polyester', 'foam', 'down', 'cotton', 'shell'].map((cushion) => (
-                          <Label 
-                            key={cushion} 
-                            className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <RadioGroupItem value={cushion} />
-                            <span className="capitalize">{cushion}</span>
-                          </Label>
-                        ))}
-                      </RadioGroup>
+                      ))}
                     </div>
                   </div>
 
                   <Button type="submit" className="w-full h-12 text-base" disabled={loading || !productData.name}>
                     <Plus className="w-5 h-5 mr-2" />
-                    {loading ? 'Creating Variation...' : 'Add Product Variation'}
+                    {loading ? 'Creating Variations...' : 'Create All Product Variations'}
                   </Button>
                 </form>
               </CardContent>
