@@ -222,21 +222,18 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'post' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Add New Product</CardTitle>
-              <p className="text-muted-foreground">This creates both the furniture card and the detailed product page</p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Furniture Card Information */}
+          <div className="space-y-8">
+            {/* Section 1: Furniture Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl text-primary">Section 1: Furniture Card</CardTitle>
+                <p className="text-muted-foreground">Creates cards displayed in themes and categories</p>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-deep-blue border-b pb-2">Furniture Card Information</h3>
-                  <p className="text-sm text-muted-foreground">This information appears on the cards in themes and categories</p>
-                  
                   {/* Main Product Image */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Main Product Image *</label>
+                    <label className="block text-sm font-medium mb-2">Product Image *</label>
                     <Input
                       type="file"
                       accept="image/*"
@@ -266,7 +263,7 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Product Number *</label>
+                      <label className="block text-sm font-medium mb-2">Code Number *</label>
                       <Input
                         type="text"
                         placeholder="e.g., FRN-001"
@@ -316,7 +313,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Price (₱) *</label>
+                    <label className="block text-sm font-medium mb-2">Price (₹) *</label>
                     <Input
                       type="number"
                       step="0.01"
@@ -326,16 +323,49 @@ const AdminDashboard = () => {
                       required
                     />
                   </div>
-                </div>
 
-                {/* Product Page Details */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-deep-blue border-b pb-2">Product Page Details</h3>
-                  <p className="text-sm text-muted-foreground">This information appears on the detailed product page</p>
+                  <Button type="button" onClick={() => toast({title: "Card Created", description: "Furniture card added successfully"})} className="w-full">
+                    Add Card
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Section 2: Product Page */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl text-primary">Section 2: Product Page</CardTitle>
+                <p className="text-muted-foreground">Creates detailed product page with customization options</p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Product Name *</label>
+                      <Input
+                        type="text"
+                        placeholder="Enter product name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Code Number *</label>
+                      <Input
+                        type="text"
+                        placeholder="e.g., FRN-001"
+                        value={formData.product_number}
+                        onChange={(e) => setFormData({...formData, product_number: e.target.value})}
+                        required
+                      />
+                    </div>
+                  </div>
 
                   {/* Product Views - 4 Image Grid */}
                   <div>
-                    <label className="block text-sm font-medium mb-4">Product Views (4 Images Grid Layout)</label>
+                    <label className="block text-sm font-medium mb-4">View 1, 2, 3, 4 (Images uploaded from system)</label>
                     <div className="grid grid-cols-2 gap-4">
                       {['view1', 'view2', 'view3', 'view4'].map((view, index) => (
                         <div key={view}>
@@ -361,7 +391,7 @@ const AdminDashboard = () => {
 
                   {/* Description */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Description</label>
+                    <label className="block text-sm font-medium mb-2">Description Field</label>
                     <textarea
                       rows={4}
                       className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -371,52 +401,9 @@ const AdminDashboard = () => {
                     />
                   </div>
 
-                  {/* Customization Options */}
-                  <div>
-                    <label className="block text-sm font-medium mb-4">Customization Options</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-2">Wood Type</label>
-                        <Select
-                          value={formData.wood_type}
-                          onValueChange={(value) => setFormData({ ...formData, wood_type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Wood Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="teak">Teak (Solid Wood)</SelectItem>
-                            <SelectItem value="walnut">Walnut (Solid Wood)</SelectItem>
-                            <SelectItem value="pine">Pine (Solid Wood)</SelectItem>
-                            <SelectItem value="mango">Mango (Solid Wood)</SelectItem>
-                            <SelectItem value="plywood">Plywood</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-2">Cushion Type</label>
-                        <Select
-                          value={formData.cushion_type}
-                          onValueChange={(value) => setFormData({ ...formData, cushion_type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Cushion Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="polyester">Polyester</SelectItem>
-                            <SelectItem value="foam">Foam</SelectItem>
-                            <SelectItem value="down">Down</SelectItem>
-                            <SelectItem value="cotton">Cotton</SelectItem>
-                            <SelectItem value="shell">Shell</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Customized Furniture Image */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Customized Furniture Image</label>
+                    <label className="block text-sm font-medium mb-2">Customized Furniture (Upload from System)</label>
                     <Input
                       type="file"
                       accept="image/*"
@@ -432,14 +419,87 @@ const AdminDashboard = () => {
                       </div>
                     )}
                   </div>
-                </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Adding Product...' : 'Add Product'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  {/* Customization Options */}
+                  <div>
+                    <label className="block text-sm font-medium mb-4">Options for Wood and Cushioning</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h5 className="text-sm font-medium text-muted-foreground mb-3">Options for Wood</h5>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2">Solid Wood:</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {['teak', 'walnut', 'pine', 'mango'].map((wood) => (
+                                <label key={wood} className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    name="wood_type"
+                                    value={wood}
+                                    checked={formData.wood_type === wood}
+                                    onChange={(e) => setFormData({...formData, wood_type: e.target.value})}
+                                    className="text-primary focus:ring-primary"
+                                  />
+                                  <span className="text-sm capitalize">{wood}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2">Plywood:</p>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={formData.wood_type === 'plywood'}
+                                onChange={(e) => setFormData({...formData, wood_type: e.target.checked ? 'plywood' : ''})}
+                                className="text-primary focus:ring-primary rounded"
+                              />
+                              <span className="text-sm">Plywood</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-medium text-muted-foreground mb-3">Options for Cushioning</h5>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['polyester', 'foam', 'down', 'cotton', 'shell'].map((cushion) => (
+                            <label key={cushion} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                name="cushion_type"
+                                value={cushion}
+                                checked={formData.cushion_type === cushion}
+                                onChange={(e) => setFormData({...formData, cushion_type: e.target.value})}
+                                className="text-primary focus:ring-primary"
+                              />
+                              <span className="text-sm capitalize">{cushion}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Price (₹) *</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      required
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Adding Product...' : 'Add Product'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

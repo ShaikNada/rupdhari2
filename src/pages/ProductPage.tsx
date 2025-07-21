@@ -128,164 +128,174 @@ const ProductPage = () => {
       </div>
 
       <div className="container mx-auto px-6 py-12">
-        {/* Product Name and Code Number */}
-        <div className="mb-8">
-          <div className="bg-soft-brown text-cream p-6 rounded-lg inline-block">
-            <h1 className="text-3xl font-brahmos font-bold uppercase">{currentProduct.name}</h1>
+        {/* Product Name and Code Number - Enhanced Layout */}
+        <div className="mb-12 text-center animate-fade-in">
+          <div className="bg-gradient-to-r from-soft-brown via-warm-gold/20 to-soft-brown text-cream p-8 rounded-2xl inline-block shadow-elegant mb-6">
+            <h1 className="text-4xl font-brahmos font-bold uppercase tracking-wide">{currentProduct.name}</h1>
           </div>
-          <div className="mt-4">
-            <span className="text-lg text-deep-blue font-medium">Code No. {currentProduct.product_number}</span>
+          <div className="bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full inline-block shadow-soft">
+            <span className="text-xl text-deep-blue font-semibold">Code No. {currentProduct.product_number}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Main Content - Enhanced Two Column Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-16">
           
-          {/* Left Side - Product Images */}
-          <div className="space-y-6">
-            {/* 4 View Images Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="aspect-square bg-card rounded-lg overflow-hidden shadow-soft">
-                <img 
-                  src={currentProduct.view1_image_url || currentProduct.image_url} 
-                  alt="View 1"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="aspect-square bg-card rounded-lg overflow-hidden shadow-soft">
-                <img 
-                  src={currentProduct.view2_image_url || currentProduct.image_url} 
-                  alt="View 2"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="aspect-square bg-card rounded-lg overflow-hidden shadow-soft">
-                <img 
-                  src={currentProduct.view3_image_url || currentProduct.image_url} 
-                  alt="View 3"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="aspect-square bg-card rounded-lg overflow-hidden shadow-soft">
-                <img 
-                  src={currentProduct.view4_image_url || currentProduct.image_url} 
-                  alt="View 4"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+          {/* Left Side - Product Images Grid with Animation */}
+          <div className="space-y-8">
+            {/* Aesthetic 4 View Images Grid */}
+            <div className="grid grid-cols-2 gap-6 animate-fade-in">
+              {[
+                { src: currentProduct.view1_image_url, alt: "Front View", label: "01" },
+                { src: currentProduct.view2_image_url, alt: "Side View", label: "02" },
+                { src: currentProduct.view3_image_url, alt: "Back View", label: "03" },
+                { src: currentProduct.view4_image_url, alt: "Detail View", label: "04" }
+              ].map((view, index) => (
+                <div key={index} className="group relative overflow-hidden rounded-2xl shadow-elegant hover-scale">
+                  <div className="aspect-square bg-gradient-to-br from-taupe/10 to-warm-beige/20 overflow-hidden">
+                    <img 
+                      src={view.src || currentProduct.image_url} 
+                      alt={view.alt}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-deep-blue px-3 py-1 rounded-full text-sm font-medium">
+                    {view.label}
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+              ))}
             </div>
 
-            {/* Description */}
+            {/* Enhanced Description Section */}
             {currentProduct.description && (
-              <div className="mt-8">
-                <h3 className="font-serif text-xl text-deep-blue mb-4">Description</h3>
-                <p className="text-deep-blue/80 leading-relaxed">{currentProduct.description}</p>
+              <div className="mt-12 bg-white/60 backdrop-blur-sm p-8 rounded-2xl shadow-soft animate-fade-in">
+                <h3 className="font-serif text-2xl text-deep-blue mb-6 flex items-center">
+                  <span className="w-3 h-3 bg-warm-gold rounded-full mr-3"></span>
+                  Description
+                </h3>
+                <p className="text-deep-blue/80 leading-relaxed text-lg">{currentProduct.description}</p>
               </div>
             )}
           </div>
 
-          {/* Right Side - Customization */}
+          {/* Right Side - Enhanced Customization Panel */}
           <div className="space-y-8">
-            <div className="bg-card p-6 rounded-lg shadow-soft">
-              <h2 className="text-2xl font-serif text-deep-blue mb-2">Crafted to Your Specifications</h2>
-              <p className="text-deep-blue/70 mb-8">Personalization at Your Fingertips</p>
+            <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-elegant animate-fade-in">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-serif text-deep-blue mb-3">Crafted to Your Specifications</h2>
+                <p className="text-deep-blue/70 text-lg">Personalization at Your Fingertips</p>
+              </div>
               
-              {/* Large Customized Image */}
-              <div className="aspect-square bg-taupe/20 rounded-lg overflow-hidden mb-8">
-                <img 
-                  src={currentProduct.customized_image_url || currentProduct.image_url} 
-                  alt="Customized furniture"
-                  className="w-full h-full object-cover"
-                />
+              {/* Large Customized Image with Enhanced Styling */}
+              <div className="relative mb-10 group">
+                <div className="aspect-square bg-gradient-to-br from-taupe/10 via-warm-beige/20 to-soft-brown/10 rounded-2xl overflow-hidden shadow-elegant">
+                  <img 
+                    src={currentProduct.customized_image_url || currentProduct.image_url} 
+                    alt="Customized furniture"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
 
-              {/* Wood Selection */}
-              <div className="mb-8">
-                <h4 className="font-medium text-deep-blue mb-4 flex items-center">
-                  <span className="w-2 h-2 bg-warm-gold rounded-full mr-2"></span>
-                  Wood
+              {/* Enhanced Wood Selection */}
+              <div className="mb-10">
+                <h4 className="font-semibold text-deep-blue mb-6 flex items-center text-lg">
+                  <span className="w-3 h-3 bg-warm-gold rounded-full mr-3"></span>
+                  Wood Selection
                 </h4>
                 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
-                    <p className="text-sm text-deep-blue/70 mb-2">Solid wood</p>
-                    <div className="grid grid-cols-4 gap-3">
+                    <p className="text-sm text-deep-blue/70 mb-4 font-medium">Solid Wood Options</p>
+                    <div className="grid grid-cols-2 gap-4">
                       {['Teak', 'Walnut', 'Pine', 'Mango'].map((wood) => (
                         <button
                           key={wood}
                           onClick={() => setSelectedWood(woodTypes[wood as keyof typeof woodTypes])}
-                          className={`p-3 rounded-lg border-2 transition-all ${
+                          className={`group p-4 rounded-xl border-2 transition-all duration-300 hover-scale ${
                             selectedWood === woodTypes[wood as keyof typeof woodTypes]
-                              ? 'border-warm-gold bg-warm-gold/10' 
-                              : 'border-taupe/30 hover:border-warm-gold/50'
+                              ? 'border-warm-gold bg-warm-gold/10 shadow-soft' 
+                              : 'border-taupe/30 hover:border-warm-gold/50 hover:shadow-soft'
                           }`}
                         >
-                          <div className="aspect-square bg-gradient-to-br from-amber-200 to-amber-400 rounded mb-2"></div>
-                          <p className="text-xs text-deep-blue font-medium">{wood}</p>
+                          <div className="aspect-square bg-gradient-to-br from-amber-200 via-amber-300 to-amber-400 rounded-lg mb-3 shadow-soft group-hover:shadow-elegant transition-shadow duration-300"></div>
+                          <p className="text-sm text-deep-blue font-semibold">{wood}</p>
                         </button>
                       ))}
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-center">
-                    <span className="text-deep-blue/50 font-medium">OR</span>
+                  <div className="flex items-center justify-center py-2">
+                    <div className="flex items-center space-x-4">
+                      <div className="h-px bg-taupe/30 w-16"></div>
+                      <span className="text-deep-blue/50 font-medium text-sm">OR</span>
+                      <div className="h-px bg-taupe/30 w-16"></div>
+                    </div>
                   </div>
                   
                   <div>
                     <button
                       onClick={() => setSelectedWood('plywood')}
-                      className={`p-4 rounded-lg border-2 transition-all ${
+                      className={`w-full p-6 rounded-xl border-2 transition-all duration-300 text-left hover-scale ${
                         selectedWood === 'plywood'
-                          ? 'border-warm-gold bg-warm-gold/10' 
-                          : 'border-taupe/30 hover:border-warm-gold/50'
+                          ? 'border-warm-gold bg-warm-gold/10 shadow-soft' 
+                          : 'border-taupe/30 hover:border-warm-gold/50 hover:shadow-soft'
                       }`}
                     >
-                      <p className="font-medium text-deep-blue">Plywood</p>
-                      <p className="text-xs text-deep-blue/70">Endless veneer shade options tailored to your taste.</p>
-                      <p className="text-xs text-deep-blue/70">Ensuring a seamless blend with your overall design aesthetic.</p>
+                      <p className="font-semibold text-deep-blue mb-2">Plywood</p>
+                      <p className="text-sm text-deep-blue/70 leading-relaxed">Endless veneer shade options tailored to your taste, ensuring a seamless blend with your overall design aesthetic.</p>
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Cushioning Selection */}
+              {/* Enhanced Cushioning Selection */}
               <div className="mb-8">
-                <h4 className="font-medium text-deep-blue mb-4 flex items-center">
-                  <span className="w-2 h-2 bg-warm-gold rounded-full mr-2"></span>
-                  Cushioning
+                <h4 className="font-semibold text-deep-blue mb-6 flex items-center text-lg">
+                  <span className="w-3 h-3 bg-warm-gold rounded-full mr-3"></span>
+                  Cushioning Options
                 </h4>
-                <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                   {Object.entries(cushionTypes).map(([display, value]) => (
                     <button
                       key={value}
                       onClick={() => setSelectedCushion(value)}
-                      className={`p-3 rounded-lg border-2 transition-all ${
+                      className={`group p-4 rounded-xl border-2 transition-all duration-300 hover-scale ${
                         selectedCushion === value
-                          ? 'border-warm-gold bg-warm-gold/10' 
-                          : 'border-taupe/30 hover:border-warm-gold/50'
+                          ? 'border-warm-gold bg-warm-gold/10 shadow-soft' 
+                          : 'border-taupe/30 hover:border-warm-gold/50 hover:shadow-soft'
                       }`}
                     >
-                      <div className="aspect-square bg-gradient-to-br from-green-200 to-green-400 rounded mb-2"></div>
-                      <p className="text-xs text-deep-blue font-medium">{display}</p>
+                      <div className="aspect-square bg-gradient-to-br from-green-200 via-green-300 to-green-400 rounded-lg mb-3 shadow-soft group-hover:shadow-elegant transition-shadow duration-300"></div>
+                      <p className="text-xs text-deep-blue font-semibold">{display}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <p className="text-sm text-deep-blue/60 mb-6 flex items-center">
-                <span className="w-2 h-2 bg-warm-gold rounded-full mr-2"></span>
-                Size can be customized based on customer preferences.
-              </p>
+              <div className="bg-warm-gold/10 p-4 rounded-xl mb-8">
+                <p className="text-sm text-deep-blue/80 flex items-center">
+                  <span className="w-2 h-2 bg-warm-gold rounded-full mr-3"></span>
+                  Size can be customized based on customer preferences.
+                </p>
+              </div>
 
-              {/* Price */}
-              <div className="text-center pt-6 border-t border-taupe/20">
-                <p className="text-3xl font-bold text-rich-brown">₱{currentProduct.price.toLocaleString()}</p>
+              {/* Enhanced Price Display */}
+              <div className="text-center py-8 border-t border-warm-gold/20">
+                <div className="bg-gradient-to-r from-rich-brown/10 to-warm-gold/10 p-6 rounded-xl">
+                  <p className="text-4xl font-bold bg-gradient-to-r from-rich-brown to-warm-gold bg-clip-text text-transparent">
+                    ₱{currentProduct.price.toLocaleString()}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Contact Button */}
+            {/* Enhanced Contact Button */}
             <Button 
               size="lg" 
-              className="w-full font-medium text-lg py-6"
+              className="w-full font-semibold text-xl py-8 bg-gradient-to-r from-warm-gold to-rich-brown hover:from-rich-brown hover:to-warm-gold transition-all duration-300 hover-scale shadow-elegant hover:shadow-glow"
             >
               Contact for Custom Order
             </Button>
