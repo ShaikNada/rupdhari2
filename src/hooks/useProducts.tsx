@@ -14,11 +14,12 @@ export const useProducts = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('is_main_variant', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      console.log('All products fetched from database:', data);
+      console.log('All main products fetched from database:', data?.length);
 
       // Transform database products to match our Product interface
       const transformedProducts: Product[] = (data || []).map(product => ({
@@ -37,6 +38,7 @@ export const useProducts = () => {
 
       setProducts(transformedProducts);
     } catch (err: any) {
+      console.error('Error fetching products:', err);
       setError(err.message);
     } finally {
       setLoading(false);

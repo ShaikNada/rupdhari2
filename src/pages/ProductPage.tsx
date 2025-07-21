@@ -19,17 +19,17 @@ const ProductPage = () => {
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [displayImage, setDisplayImage] = useState("");
 
-  // Fetch product and its variations with detailed logging
+  // Fetch product and its variations with comprehensive logging
   const { data: products, isLoading } = useQuery({
     queryKey: ['product', productName],
     queryFn: async () => {
       if (!productName) return null;
       
       const decodedName = decodeURIComponent(productName);
-      console.log('=== PRODUCT FETCH DEBUG ===');
-      console.log('Fetching product:', decodedName);
+      console.log('=== COMPREHENSIVE PRODUCT FETCH DEBUG ===');
+      console.log('1. Fetching product:', decodedName);
       
-      // First get the main product (is_main_variant = true)
+      // First get the main product
       const { data: mainProduct, error: mainError } = await supabase
         .from('products')
         .select('*')
@@ -38,78 +38,76 @@ const ProductPage = () => {
         .maybeSingle();
       
       if (mainError) {
-        console.error('Main product error:', mainError);
+        console.error('2. Main product error:', mainError);
         throw mainError;
       }
       if (!mainProduct) {
-        console.log('No main product found for:', decodedName);
+        console.log('2. No main product found for:', decodedName);
         return null;
       }
       
-      console.log('✅ Found main product:', mainProduct);
-      console.log('Main product number:', mainProduct.product_number);
+      console.log('2. ✅ Found main product:', {
+        id: mainProduct.id,
+        name: mainProduct.name,
+        product_number: mainProduct.product_number,
+        image_url_length: mainProduct.image_url?.length || 0
+      });
       
-      // Then get ALL variations with the same product_number (including main variant)
+      // Then get ALL variations with the same product_number
       const { data: allVariations, error: variationsError } = await supabase
         .from('products')
         .select('*')
-        .eq('product_number', mainProduct.product_number);
+        .eq('product_number', mainProduct.product_number)
+        .eq('is_main_variant', false);
       
       if (variationsError) {
-        console.error('Variations error:', variationsError);
+        console.error('3. Variations error:', variationsError);
         throw variationsError;
       }
       
-      console.log('✅ ALL variations found:', allVariations?.length || 0);
-      console.log('All variations data:', allVariations);
+      console.log('3. ✅ Variations found:', allVariations?.length || 0);
       
-      // Filter out the main variant from variations
-      const variations = allVariations?.filter(v => !v.is_main_variant) || [];
-      console.log('✅ Filtered variations (non-main):', variations.length);
-      
-      // Log each variation with its properties
-      variations.forEach((v, index) => {
-        console.log(`Variation ${index + 1}:`, {
-          id: v.id,
-          wood_type: v.wood_type,
-          cushion_type: v.cushion_type,
-          customized_image_url: v.customized_image_url,
-          hasImage: !!(v.customized_image_url && v.customized_image_url.trim() !== ''),
-          price: v.price,
-          imageLength: v.customized_image_url ? v.customized_image_url.length : 0
+      // Log each variation with detailed info
+      if (allVariations) {
+        allVariations.forEach((v, index) => {
+          const hasCustomImage = v.customized_image_url && v.customized_image_url.trim() !== '';
+          console.log(`4. Variation ${index + 1}: ${v.wood_type}+${v.cushion_type} - ${hasCustomImage ? 'HAS IMAGE (' + v.customized_image_url.length + ' chars)' : 'NO IMAGE'}`);
+          if (hasCustomImage && v.customized_image_url.length < 100) {
+            console.log(`   WARNING: Image data seems too short: ${v.customized_image_url}`);
+          }
         });
-      });
+      }
       
-      return { mainProduct, variations };
+      return { mainProduct, variations: allVariations || [] };
     },
   });
 
-  // Update display image when customization changes with detailed logging
+  // Update display image when customization changes
   useEffect(() => {
     if (products && products.variations) {
-      console.log('=== IMAGE UPDATE DEBUG ===');
-      console.log('Selected combination:', { wood: selectedWood, cushioning: selectedCushioning });
-      console.log('Available variations:', products.variations.length);
+      console.log('=== IMAGE SELECTION DEBUG ===');
+      console.log('5. Selected combination:', { wood: selectedWood, cushioning: selectedCushioning });
+      console.log('5. Available variations:', products.variations.length);
       
-      // Try exact match first
+      // Find exact match with image
       const exactMatch = products.variations.find(v => {
-        const match = v.wood_type === selectedWood && v.cushion_type === selectedCushioning;
+        const woodMatch = v.wood_type === selectedWood;
+        const cushionMatch = v.cushion_type === selectedCushioning;
         const hasImage = v.customized_image_url && v.customized_image_url.trim() !== '';
-        console.log(`Checking variation: wood=${v.wood_type}, cushion=${v.cushion_type}, match=${match}, hasImage=${hasImage}`);
-        if (hasImage) {
-          console.log(`Image URL length: ${v.customized_image_url.length}`);
-          console.log(`Image URL preview: ${v.customized_image_url.substring(0, 50)}...`);
-        }
-        return match && hasImage;
+        
+        console.log(`6. Checking: ${v.wood_type}+${v.cushion_type} - Wood:${woodMatch}, Cushion:${cushionMatch}, Image:${hasImage}`);
+        
+        return woodMatch && cushionMatch && hasImage;
       });
       
-      console.log('Exact match result:', exactMatch ? 'FOUND' : 'NOT FOUND');
-      
       if (exactMatch) {
-        console.log('✅ Using exact match image:', exactMatch.customized_image_url.substring(0, 50) + '...');
+        console.log('7. ✅ EXACT MATCH FOUND! Using custom image');
+        console.log('7. Image length:', exactMatch.customized_image_url.length);
+        console.log('7. Image preview:', exactMatch.customized_image_url.substring(0, 50) + '...');
         setDisplayImage(exactMatch.customized_image_url);
       } else {
-        console.log('❌ No exact match, using main product image:', products.mainProduct.image_url);
+        console.log('7. ❌ No exact match found, using main product image');
+        console.log('7. Main image length:', products.mainProduct.image_url?.length || 0);
         setDisplayImage(products.mainProduct.image_url || '');
       }
     }
@@ -118,7 +116,7 @@ const ProductPage = () => {
   // Set initial display image when product loads
   useEffect(() => {
     if (products?.mainProduct?.image_url && !displayImage) {
-      console.log('Setting initial display image:', products.mainProduct.image_url);
+      console.log('8. Setting initial display image from main product');
       setDisplayImage(products.mainProduct.image_url);
     }
   }, [products, displayImage]);
@@ -191,28 +189,20 @@ const ProductPage = () => {
     { name: 'Mango', value: 'mango', description: 'Natural fruit fiber cushioning' }
   ];
 
-  // Helper function to check if variation has image - with detailed logging
+  // Helper function to check if variation has image
   const hasVariationImage = (wood: string, cushion: string) => {
-    console.log(`=== CHECKING VARIATION IMAGE ===`);
-    console.log(`Looking for: wood=${wood}, cushion=${cushion}`);
+    console.log(`=== CHECKING VARIATION IMAGE FOR UI ===`);
+    console.log(`9. Looking for: ${wood}+${cushion}`);
     
     const variation = products?.variations?.find(v => {
-      const woodMatch = v.wood_type === wood;
-      const cushionMatch = v.cushion_type === cushion;
+      const match = v.wood_type === wood && v.cushion_type === cushion;
       const hasImage = v.customized_image_url && v.customized_image_url.trim() !== '';
-      
-      console.log(`Variation check: wood=${v.wood_type}(${woodMatch}), cushion=${v.cushion_type}(${cushionMatch}), hasImage=${hasImage}`);
-      
-      return woodMatch && cushionMatch && hasImage;
+      console.log(`10. Check ${v.wood_type}+${v.cushion_type}: match=${match}, hasImage=${hasImage}`);
+      return match && hasImage;
     });
     
     const result = !!variation;
-    console.log(`Final result for ${wood}+${cushion}: ${result ? 'HAS IMAGE' : 'NO IMAGE'}`);
-    
-    if (variation) {
-      console.log('Found variation with image:', variation.customized_image_url.substring(0, 50) + '...');
-    }
-    
+    console.log(`10. Final result for ${wood}+${cushion}: ${result ? 'HAS IMAGE' : 'NO IMAGE'}`);
     return result;
   };
 
@@ -466,8 +456,8 @@ const ProductPage = () => {
                           >
                             <div className="aspect-square bg-gradient-to-br from-amber-100 to-amber-300 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
                               {hasImage ? (
-                                <div className="w-full h-full bg-gradient-to-br from-amber-600 to-amber-800 rounded flex items-center justify-center">
-                                  <span className="text-xs text-white font-medium">Available</span>
+                                <div className="w-full h-full bg-gradient-to-br from-green-500 to-green-600 rounded flex items-center justify-center">
+                                  <span className="text-xs text-white font-medium">✓ Available</span>
                                 </div>
                               ) : (
                                 <div className="text-center p-2">
@@ -505,8 +495,8 @@ const ProductPage = () => {
                             <div className="flex items-center gap-4">
                               <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
                                 {hasImage ? (
-                                  <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 rounded flex items-center justify-center">
-                                    <span className="text-xs text-white font-medium">Available</span>
+                                  <div className="w-full h-full bg-gradient-to-br from-green-500 to-green-600 rounded flex items-center justify-center">
+                                    <span className="text-xs text-white font-medium">✓ Available</span>
                                   </div>
                                 ) : (
                                   <div className="text-center">
@@ -551,7 +541,7 @@ const ProductPage = () => {
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-300 rounded-lg flex items-center justify-center overflow-hidden">
                               {hasImage ? (
-                                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded flex items-center justify-center">
+                                <div className="w-full h-full bg-gradient-to-br from-green-500 to-green-600 rounded flex items-center justify-center">
                                   <span className="text-xs text-white font-medium">✓</span>
                                 </div>
                               ) : (

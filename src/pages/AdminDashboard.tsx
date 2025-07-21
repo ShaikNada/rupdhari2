@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,6 @@ const AdminDashboard = () => {
         .from('products')
         .select('id')
         .eq('product_number', productNumber)
-        .eq('is_main_variant', true)
         .limit(1);
       
       if (error) {
@@ -152,7 +150,7 @@ const AdminDashboard = () => {
         const result = event.target?.result as string;
         console.log(`=== VARIATION IMAGE UPLOAD DEBUG ===`);
         console.log(`Variation key: ${variationKey}`);
-        console.log(`Image preview set:`, result.substring(0, 100) + '...');
+        console.log(`Image preview set for ${variationKey}:`, result.length > 0 ? 'SUCCESS' : 'FAILED');
         
         setVariationImages(prev => ({
           ...prev,
@@ -169,52 +167,57 @@ const AdminDashboard = () => {
     setLoading(true);
 
     try {
-      console.log('=== PRODUCT SUBMISSION DEBUG ===');
-      console.log('Variation images state:', Object.keys(variationImages).length);
+      console.log('=== PRODUCT SUBMISSION STARTING ===');
+      console.log('Variation images:', Object.keys(variationImages).length);
       
-      // Check if product number already exists for main variants
-      const { data: existingProduct, error: checkError } = await supabase
-        .from('products')
-        .select('id')
-        .eq('product_number', productData.product_number)
-        .eq('is_main_variant', true)
-        .limit(1);
-
-      if (checkError) {
-        throw checkError;
-      }
-
-      if (existingProduct && existingProduct.length > 0) {
+      // Validate required fields
+      if (!productData.name || !productData.price || !productData.product_number || 
+          !productData.theme || !productData.category || !productData.image_url) {
         toast({
-          title: "Product Number Already Exists",
-          description: "This product number is already in use. Please generate a new one.",
+          title: "Missing Required Fields",
+          description: "Please fill in all required fields and upload a main image.",
           variant: "destructive",
         });
         return;
       }
 
+      // First delete any existing products with the same product number
+      console.log('Deleting existing products with same product number...');
+      const { error: deleteError } = await supabase
+        .from('products')
+        .delete()
+        .eq('product_number', productData.product_number);
+
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+      }
+
       // Create main product
+      console.log('Creating main product...');
+      const mainProductData = {
+        name: productData.name,
+        price: parseFloat(productData.price),
+        product_number: productData.product_number,
+        theme: productData.theme,
+        category: productData.category,
+        image_url: productData.image_url,
+        description: productData.description || '',
+        view1_image_url: productData.view1_image_url || '',
+        view2_image_url: productData.view2_image_url || '',
+        view3_image_url: productData.view3_image_url || '',
+        view4_image_url: productData.view4_image_url || '',
+        wood_type: null,
+        cushion_type: null,
+        customized_image_url: '',
+        is_main_variant: true
+      };
+
       const { error: mainError } = await supabase
         .from('products')
-        .insert([{
-          name: productData.name,
-          price: parseFloat(productData.price),
-          product_number: productData.product_number,
-          theme: productData.theme,
-          category: productData.category,
-          image_url: productData.image_url,
-          description: productData.description,
-          view1_image_url: productData.view1_image_url,
-          view2_image_url: productData.view2_image_url,
-          view3_image_url: productData.view3_image_url,
-          view4_image_url: productData.view4_image_url,
-          wood_type: null,
-          cushion_type: null,
-          customized_image_url: '',
-          is_main_variant: true
-        }]);
+        .insert([mainProductData]);
 
       if (mainError) {
+        console.error('Main product creation error:', mainError);
         throw mainError;
       }
 
@@ -222,15 +225,13 @@ const AdminDashboard = () => {
 
       // Create all variations
       const variations = generateVariationCombinations();
+      console.log(`Creating ${variations.length} variations...`);
+      
       const variationsToInsert = variations.map(variation => {
         const variationImage = variationImages[variation.key];
         const customizedImageUrl = variationImage?.preview || '';
         
-        console.log(`Creating variation: ${variation.wood} + ${variation.cushion}`);
-        console.log(`Has custom image: ${!!customizedImageUrl}`);
-        if (customizedImageUrl) {
-          console.log(`Image data length: ${customizedImageUrl.length}`);
-        }
+        console.log(`Variation ${variation.key}: ${customizedImageUrl ? 'HAS IMAGE' : 'NO IMAGE'}`);
         
         return {
           name: productData.name,
@@ -239,11 +240,11 @@ const AdminDashboard = () => {
           theme: productData.theme,
           category: productData.category,
           image_url: productData.image_url, // Keep main image as fallback
-          description: productData.description,
-          view1_image_url: productData.view1_image_url,
-          view2_image_url: productData.view2_image_url,
-          view3_image_url: productData.view3_image_url,
-          view4_image_url: productData.view4_image_url,
+          description: productData.description || '',
+          view1_image_url: productData.view1_image_url || '',
+          view2_image_url: productData.view2_image_url || '',
+          view3_image_url: productData.view3_image_url || '',
+          view4_image_url: productData.view4_image_url || '',
           wood_type: variation.wood,
           cushion_type: variation.cushion,
           customized_image_url: customizedImageUrl,
@@ -251,7 +252,6 @@ const AdminDashboard = () => {
         };
       });
 
-      console.log(`Inserting ${variationsToInsert.length} variations`);
       console.log('Variations with images:', variationsToInsert.filter(v => v.customized_image_url).length);
 
       const { error: variationsError } = await supabase
@@ -259,7 +259,7 @@ const AdminDashboard = () => {
         .insert(variationsToInsert);
 
       if (variationsError) {
-        console.error('Variations error:', variationsError);
+        console.error('Variations creation error:', variationsError);
         throw variationsError;
       }
 
@@ -267,7 +267,7 @@ const AdminDashboard = () => {
 
       toast({
         title: "Product Created Successfully",
-        description: `Created main product with ${variationsToInsert.length} variations`,
+        description: `Created main product with ${variationsToInsert.length} variations (${variationsToInsert.filter(v => v.customized_image_url).length} with custom images)`,
       });
 
       // Reset form
@@ -294,6 +294,7 @@ const AdminDashboard = () => {
       });
       setVariationImages({});
       refetch();
+
     } catch (error: any) {
       console.error('Product creation error:', error);
       toast({
