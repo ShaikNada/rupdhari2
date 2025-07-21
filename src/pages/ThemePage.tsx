@@ -83,7 +83,7 @@ const ThemePage = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {products.map((product) => (
-            <Link key={product.id} to={`/product/${product.id}`}>
+            <Link key={product.id} to={`/product/${encodeURIComponent(product.name)}`}>
               <Card className="group cursor-pointer bg-card border-0 shadow-soft hover:shadow-luxury transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                 <CardContent className="p-0">
                 <div className="relative aspect-square bg-taupe/20 overflow-hidden">
