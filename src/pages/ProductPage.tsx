@@ -75,7 +75,8 @@ const ProductPage = () => {
           cushion_type: v.cushion_type,
           customized_image_url: v.customized_image_url,
           hasImage: !!(v.customized_image_url && v.customized_image_url.trim() !== ''),
-          price: v.price
+          price: v.price,
+          imageLength: v.customized_image_url ? v.customized_image_url.length : 0
         });
       });
       
@@ -93,14 +94,19 @@ const ProductPage = () => {
       // Try exact match first
       const exactMatch = products.variations.find(v => {
         const match = v.wood_type === selectedWood && v.cushion_type === selectedCushioning;
-        console.log(`Checking variation: wood=${v.wood_type}, cushion=${v.cushion_type}, match=${match}, hasImage=${!!(v.customized_image_url && v.customized_image_url.trim() !== '')}`);
-        return match && v.customized_image_url && v.customized_image_url.trim() !== '';
+        const hasImage = v.customized_image_url && v.customized_image_url.trim() !== '';
+        console.log(`Checking variation: wood=${v.wood_type}, cushion=${v.cushion_type}, match=${match}, hasImage=${hasImage}`);
+        if (hasImage) {
+          console.log(`Image URL length: ${v.customized_image_url.length}`);
+          console.log(`Image URL preview: ${v.customized_image_url.substring(0, 50)}...`);
+        }
+        return match && hasImage;
       });
       
       console.log('Exact match result:', exactMatch ? 'FOUND' : 'NOT FOUND');
       
       if (exactMatch) {
-        console.log('✅ Using exact match image:', exactMatch.customized_image_url);
+        console.log('✅ Using exact match image:', exactMatch.customized_image_url.substring(0, 50) + '...');
         setDisplayImage(exactMatch.customized_image_url);
       } else {
         console.log('❌ No exact match, using main product image:', products.mainProduct.image_url);
@@ -190,7 +196,7 @@ const ProductPage = () => {
     console.log(`=== CHECKING VARIATION IMAGE ===`);
     console.log(`Looking for: wood=${wood}, cushion=${cushion}`);
     
-    const variation = variations.find(v => {
+    const variation = products?.variations?.find(v => {
       const woodMatch = v.wood_type === wood;
       const cushionMatch = v.cushion_type === cushion;
       const hasImage = v.customized_image_url && v.customized_image_url.trim() !== '';
@@ -204,7 +210,7 @@ const ProductPage = () => {
     console.log(`Final result for ${wood}+${cushion}: ${result ? 'HAS IMAGE' : 'NO IMAGE'}`);
     
     if (variation) {
-      console.log('Found variation with image:', variation.customized_image_url);
+      console.log('Found variation with image:', variation.customized_image_url.substring(0, 50) + '...');
     }
     
     return result;

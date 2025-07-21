@@ -58,7 +58,7 @@ const AdminDashboard = () => {
 
   // Wood and cushioning options
   const woodOptions = ['teak', 'walnut', 'pine', 'mango', 'plywood'];
-  const cushionOptions = ['polyester', 'foam', 'down', 'cotton', 'shell'];
+  const cushionOptions = ['polyester', 'foam', 'down', 'cotton', 'shell', 'mango'];
 
   // Generate unique product number
   const generateProductNumber = async () => {
@@ -150,6 +150,10 @@ const AdminDashboard = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
+        console.log(`=== VARIATION IMAGE UPLOAD DEBUG ===`);
+        console.log(`Variation key: ${variationKey}`);
+        console.log(`Image preview set:`, result.substring(0, 100) + '...');
+        
         setVariationImages(prev => ({
           ...prev,
           [variationKey]: { file, preview: result }
@@ -165,6 +169,9 @@ const AdminDashboard = () => {
     setLoading(true);
 
     try {
+      console.log('=== PRODUCT SUBMISSION DEBUG ===');
+      console.log('Variation images state:', Object.keys(variationImages).length);
+      
       // Check if product number already exists for main variants
       const { data: existingProduct, error: checkError } = await supabase
         .from('products')
@@ -211,10 +218,19 @@ const AdminDashboard = () => {
         throw mainError;
       }
 
+      console.log('✅ Main product created successfully');
+
       // Create all variations
       const variations = generateVariationCombinations();
       const variationsToInsert = variations.map(variation => {
         const variationImage = variationImages[variation.key];
+        const customizedImageUrl = variationImage?.preview || '';
+        
+        console.log(`Creating variation: ${variation.wood} + ${variation.cushion}`);
+        console.log(`Has custom image: ${!!customizedImageUrl}`);
+        if (customizedImageUrl) {
+          console.log(`Image data length: ${customizedImageUrl.length}`);
+        }
         
         return {
           name: productData.name,
@@ -230,18 +246,24 @@ const AdminDashboard = () => {
           view4_image_url: productData.view4_image_url,
           wood_type: variation.wood,
           cushion_type: variation.cushion,
-          customized_image_url: variationImage?.preview || '',
+          customized_image_url: customizedImageUrl,
           is_main_variant: false
         };
       });
+
+      console.log(`Inserting ${variationsToInsert.length} variations`);
+      console.log('Variations with images:', variationsToInsert.filter(v => v.customized_image_url).length);
 
       const { error: variationsError } = await supabase
         .from('products')
         .insert(variationsToInsert);
 
       if (variationsError) {
+        console.error('Variations error:', variationsError);
         throw variationsError;
       }
+
+      console.log('✅ All variations created successfully');
 
       toast({
         title: "Product Created Successfully",
@@ -550,7 +572,7 @@ const AdminDashboard = () => {
                     {woodOptions.map((wood) => (
                       <div key={wood} className="space-y-4">
                         <h4 className="text-lg font-semibold capitalize border-b pb-2">{wood} Wood Variations</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                           {cushionOptions.map((cushion) => {
                             const variationKey = `${wood}_${cushion}`;
                             return (
