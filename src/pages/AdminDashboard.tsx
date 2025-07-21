@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getThemeNames, getCategoryNames } from '@/data/furnitureData';
-import { Upload, Package, Settings, Plus, Image, Sparkles, Palette, Grid, RefreshCw } from 'lucide-react';
+import { Upload, Package, Settings, Plus, Image, Sparkles, Grid, RefreshCw } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { OrdersTab } from "@/components/OrdersTab";
@@ -73,6 +73,7 @@ const AdminDashboard = () => {
         .from('products')
         .select('id')
         .eq('product_number', productNumber)
+        .eq('is_main_variant', true)
         .limit(1);
       
       if (error) {
@@ -164,11 +165,12 @@ const AdminDashboard = () => {
     setLoading(true);
 
     try {
-      // Check if product number already exists
+      // Check if product number already exists for main variants
       const { data: existingProduct, error: checkError } = await supabase
         .from('products')
         .select('id')
         .eq('product_number', productData.product_number)
+        .eq('is_main_variant', true)
         .limit(1);
 
       if (checkError) {
@@ -199,8 +201,8 @@ const AdminDashboard = () => {
           view2_image_url: productData.view2_image_url,
           view3_image_url: productData.view3_image_url,
           view4_image_url: productData.view4_image_url,
-          wood_type: '',
-          cushion_type: '',
+          wood_type: null,
+          cushion_type: null,
           customized_image_url: '',
           is_main_variant: true
         }]);
@@ -220,7 +222,7 @@ const AdminDashboard = () => {
           product_number: productData.product_number,
           theme: productData.theme,
           category: productData.category,
-          image_url: variationImage?.preview || '',
+          image_url: productData.image_url, // Keep main image as fallback
           description: productData.description,
           view1_image_url: productData.view1_image_url,
           view2_image_url: productData.view2_image_url,
@@ -271,6 +273,7 @@ const AdminDashboard = () => {
       setVariationImages({});
       refetch();
     } catch (error: any) {
+      console.error('Product creation error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create product",
@@ -539,7 +542,7 @@ const AdminDashboard = () => {
                       Total combinations: {woodOptions.length} × {cushionOptions.length} = {woodOptions.length * cushionOptions.length} variations
                     </p>
                     <Badge variant="outline" className="mt-2">
-                      Optional: Variations without images will show "Coming Soon" placeholder
+                      Optional: Variations without images will show placeholder
                     </Badge>
                   </div>
 

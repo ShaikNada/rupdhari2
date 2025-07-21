@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ const ProductPage = () => {
   const [selectedWood, setSelectedWood] = useState("teak");
   const [selectedCushioning, setSelectedCushioning] = useState("polyester");
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
-  const [mainImage, setMainImage] = useState("");
+  const [displayImage, setDisplayImage] = useState("");
 
   // Fetch product and its variations
   const { data: products, isLoading } = useQuery({
@@ -26,6 +27,7 @@ const ProductPage = () => {
       if (!productName) return null;
       
       const decodedName = decodeURIComponent(productName);
+      console.log('Fetching product:', decodedName);
       
       // First get the main product (is_main_variant = true)
       const { data: mainProduct, error: mainError } = await supabase
@@ -35,36 +37,63 @@ const ProductPage = () => {
         .eq('is_main_variant', true)
         .maybeSingle();
       
-      if (mainError) throw mainError;
-      if (!mainProduct) return null;
+      if (mainError) {
+        console.error('Main product error:', mainError);
+        throw mainError;
+      }
+      if (!mainProduct) {
+        console.log('No main product found for:', decodedName);
+        return null;
+      }
+      
+      console.log('Found main product:', mainProduct);
       
       // Then get all variations with the same name and product_number
       const { data: variations, error: variationsError } = await supabase
         .from('products')
         .select('*')
         .eq('name', decodedName)
-        .eq('product_number', mainProduct.product_number);
+        .eq('product_number', mainProduct.product_number)
+        .eq('is_main_variant', false);
       
-      if (variationsError) throw variationsError;
+      if (variationsError) {
+        console.error('Variations error:', variationsError);
+        throw variationsError;
+      }
+      
+      console.log('Found variations:', variations);
       
       return { mainProduct, variations: variations || [] };
     },
   });
 
-  // Update main image when customization changes
+  // Update display image when customization changes
   useEffect(() => {
     if (products && products.variations) {
       const currentVariant = products.variations.find(v => 
-        v.wood_type === selectedWood && v.cushion_type === selectedCushioning && !v.is_main_variant
+        v.wood_type === selectedWood && 
+        v.cushion_type === selectedCushioning &&
+        v.customized_image_url && 
+        v.customized_image_url.trim() !== ''
       );
       
+      console.log('Looking for variant:', { selectedWood, selectedCushioning });
+      console.log('Found variant:', currentVariant);
+      
       if (currentVariant && currentVariant.customized_image_url) {
-        setMainImage(currentVariant.customized_image_url);
-      } else if (products.mainProduct.image_url) {
-        setMainImage(products.mainProduct.image_url);
+        setDisplayImage(currentVariant.customized_image_url);
+      } else {
+        setDisplayImage(products.mainProduct.image_url || '');
       }
     }
   }, [selectedWood, selectedCushioning, products]);
+
+  // Set initial display image when product loads
+  useEffect(() => {
+    if (products?.mainProduct?.image_url && !displayImage) {
+      setDisplayImage(products.mainProduct.image_url);
+    }
+  }, [products, displayImage]);
 
   if (isLoading) {
     return (
@@ -89,17 +118,16 @@ const ProductPage = () => {
   
   // Find the variation that matches selected options or fall back to main product
   const currentVariant = variations.find(v => 
-    v.wood_type === selectedWood && v.cushion_type === selectedCushioning && !v.is_main_variant
+    v.wood_type === selectedWood && v.cushion_type === selectedCushioning
   ) || mainProduct;
 
-  // Product images - using the view images from any variant that has them
-  const variantWithViews = variations.find(v => v.view1_image_url) || mainProduct;
+  // Product images - using the view images from main product
   const productImages = [
-    mainImage || mainProduct.image_url,
-    variantWithViews.view1_image_url,
-    variantWithViews.view2_image_url,
-    variantWithViews.view3_image_url,
-    variantWithViews.view4_image_url,
+    displayImage,
+    mainProduct.view1_image_url,
+    mainProduct.view2_image_url,
+    mainProduct.view3_image_url,
+    mainProduct.view4_image_url,
   ].filter(Boolean);
 
   const handleQuantityChange = (change: number) => {
@@ -133,9 +161,12 @@ const ProductPage = () => {
   // Helper function to check if variation has image
   const hasVariationImage = (wood: string, cushion: string) => {
     const variation = variations.find(v => 
-      v.wood_type === wood && v.cushion_type === cushion && !v.is_main_variant
+      v.wood_type === wood && 
+      v.cushion_type === cushion &&
+      v.customized_image_url && 
+      v.customized_image_url.trim() !== ''
     );
-    return variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
+    return !!variation;
   };
 
   return (
@@ -324,7 +355,7 @@ const ProductPage = () => {
                     <div className="aspect-square bg-muted/30 rounded-2xl overflow-hidden shadow-elegant">
                       {hasVariationImage(selectedWood, selectedCushioning) ? (
                         <img 
-                          src={mainImage || mainProduct.image_url} 
+                          src={displayImage} 
                           alt="Customized view"
                           className="w-full h-full object-cover transition-all duration-500"
                         />
@@ -374,10 +405,7 @@ const ProductPage = () => {
                     <h4 className="font-medium text-lg">Solid Wood</h4>
                     <div className="grid grid-cols-2 gap-3">
                       {woodOptions.filter(wood => wood.type === 'solid').map((wood) => {
-                        const variation = variations.find(v => 
-                          v.wood_type === wood.value && v.cushion_type === selectedCushioning && !v.is_main_variant
-                        );
-                        const hasImage = variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
+                        const hasImage = hasVariationImage(wood.value, selectedCushioning);
                         
                         return (
                           <button
@@ -391,11 +419,9 @@ const ProductPage = () => {
                           >
                             <div className="aspect-square bg-gradient-to-br from-amber-100 to-amber-300 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
                               {hasImage ? (
-                                <img 
-                                  src={variation.customized_image_url} 
-                                  alt={wood.name}
-                                  className="w-full h-full object-cover"
-                                />
+                                <div className="w-full h-full bg-gradient-to-br from-amber-600 to-amber-800 rounded flex items-center justify-center">
+                                  <span className="text-xs text-white font-medium">Available</span>
+                                </div>
                               ) : (
                                 <div className="text-center p-2">
                                   <div className="w-6 h-6 bg-gradient-to-br from-amber-600 to-amber-800 rounded mx-auto mb-1"></div>
@@ -417,10 +443,7 @@ const ProductPage = () => {
                     <h4 className="font-medium text-lg">Engineered Wood</h4>
                     <div className="grid grid-cols-1 gap-3">
                       {woodOptions.filter(wood => wood.type === 'engineered').map((wood) => {
-                        const variation = variations.find(v => 
-                          v.wood_type === wood.value && v.cushion_type === selectedCushioning && !v.is_main_variant
-                        );
-                        const hasImage = variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
+                        const hasImage = hasVariationImage(wood.value, selectedCushioning);
                         
                         return (
                           <button
@@ -435,11 +458,9 @@ const ProductPage = () => {
                             <div className="flex items-center gap-4">
                               <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
                                 {hasImage ? (
-                                  <img 
-                                    src={variation.customized_image_url} 
-                                    alt={wood.name}
-                                    className="w-full h-full object-cover"
-                                  />
+                                  <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 rounded flex items-center justify-center">
+                                    <span className="text-xs text-white font-medium">Available</span>
+                                  </div>
                                 ) : (
                                   <div className="text-center">
                                     <div className="w-6 h-6 bg-gradient-to-br from-gray-600 to-gray-800 rounded mx-auto mb-1"></div>
@@ -468,10 +489,7 @@ const ProductPage = () => {
                   
                   <div className="space-y-3">
                     {cushioningOptions.map((cushion) => {
-                      const variation = variations.find(v => 
-                        v.wood_type === selectedWood && v.cushion_type === cushion.value && !v.is_main_variant
-                      );
-                      const hasImage = variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
+                      const hasImage = hasVariationImage(selectedWood, cushion.value);
                       
                       return (
                         <button
@@ -486,11 +504,9 @@ const ProductPage = () => {
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-300 rounded-lg flex items-center justify-center overflow-hidden">
                               {hasImage ? (
-                                <img 
-                                  src={variation.customized_image_url} 
-                                  alt={cushion.name}
-                                  className="w-full h-full object-cover"
-                                />
+                                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded flex items-center justify-center">
+                                  <span className="text-xs text-white font-medium">✓</span>
+                                </div>
                               ) : (
                                 <div className="text-center">
                                   <div className="w-4 h-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded mx-auto mb-1"></div>
