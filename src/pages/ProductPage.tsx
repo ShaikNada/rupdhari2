@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,13 +19,14 @@ const ProductPage = () => {
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [displayImage, setDisplayImage] = useState("");
 
-  // Fetch product and its variations
+  // Fetch product and its variations with detailed logging
   const { data: products, isLoading } = useQuery({
     queryKey: ['product', productName],
     queryFn: async () => {
       if (!productName) return null;
       
       const decodedName = decodeURIComponent(productName);
+      console.log('=== PRODUCT FETCH DEBUG ===');
       console.log('Fetching product:', decodedName);
       
       // First get the main product (is_main_variant = true)
@@ -46,51 +46,64 @@ const ProductPage = () => {
         return null;
       }
       
-      console.log('Found main product:', mainProduct);
+      console.log('✅ Found main product:', mainProduct);
+      console.log('Main product number:', mainProduct.product_number);
       
-      // Then get all variations with the same product_number
-      const { data: variations, error: variationsError } = await supabase
+      // Then get ALL variations with the same product_number (including main variant)
+      const { data: allVariations, error: variationsError } = await supabase
         .from('products')
         .select('*')
-        .eq('product_number', mainProduct.product_number)
-        .eq('is_main_variant', false);
+        .eq('product_number', mainProduct.product_number);
       
       if (variationsError) {
         console.error('Variations error:', variationsError);
         throw variationsError;
       }
       
-      console.log('Found variations:', variations);
-      console.log('Variations with customized images:', variations?.filter(v => v.customized_image_url && v.customized_image_url.trim() !== ''));
+      console.log('✅ ALL variations found:', allVariations?.length || 0);
+      console.log('All variations data:', allVariations);
       
-      return { mainProduct, variations: variations || [] };
+      // Filter out the main variant from variations
+      const variations = allVariations?.filter(v => !v.is_main_variant) || [];
+      console.log('✅ Filtered variations (non-main):', variations.length);
+      
+      // Log each variation with its properties
+      variations.forEach((v, index) => {
+        console.log(`Variation ${index + 1}:`, {
+          id: v.id,
+          wood_type: v.wood_type,
+          cushion_type: v.cushion_type,
+          customized_image_url: v.customized_image_url,
+          hasImage: !!(v.customized_image_url && v.customized_image_url.trim() !== ''),
+          price: v.price
+        });
+      });
+      
+      return { mainProduct, variations };
     },
   });
 
-  // Update display image when customization changes
+  // Update display image when customization changes with detailed logging
   useEffect(() => {
     if (products && products.variations) {
-      console.log('Looking for variation with:', { selectedWood, selectedCushioning });
+      console.log('=== IMAGE UPDATE DEBUG ===');
+      console.log('Selected combination:', { wood: selectedWood, cushioning: selectedCushioning });
+      console.log('Available variations:', products.variations.length);
       
-      const currentVariant = products.variations.find(v => {
-        console.log('Checking variation:', {
-          wood: v.wood_type,
-          cushion: v.cushion_type,
-          hasCustomImage: !!(v.customized_image_url && v.customized_image_url.trim() !== '')
-        });
-        return v.wood_type === selectedWood && 
-               v.cushion_type === selectedCushioning &&
-               v.customized_image_url && 
-               v.customized_image_url.trim() !== '';
+      // Try exact match first
+      const exactMatch = products.variations.find(v => {
+        const match = v.wood_type === selectedWood && v.cushion_type === selectedCushioning;
+        console.log(`Checking variation: wood=${v.wood_type}, cushion=${v.cushion_type}, match=${match}, hasImage=${!!(v.customized_image_url && v.customized_image_url.trim() !== '')}`);
+        return match && v.customized_image_url && v.customized_image_url.trim() !== '';
       });
       
-      console.log('Found matching variant:', currentVariant);
+      console.log('Exact match result:', exactMatch ? 'FOUND' : 'NOT FOUND');
       
-      if (currentVariant && currentVariant.customized_image_url) {
-        console.log('Setting display image to:', currentVariant.customized_image_url);
-        setDisplayImage(currentVariant.customized_image_url);
+      if (exactMatch) {
+        console.log('✅ Using exact match image:', exactMatch.customized_image_url);
+        setDisplayImage(exactMatch.customized_image_url);
       } else {
-        console.log('No matching variant found, using main product image:', products.mainProduct.image_url);
+        console.log('❌ No exact match, using main product image:', products.mainProduct.image_url);
         setDisplayImage(products.mainProduct.image_url || '');
       }
     }
@@ -99,6 +112,7 @@ const ProductPage = () => {
   // Set initial display image when product loads
   useEffect(() => {
     if (products?.mainProduct?.image_url && !displayImage) {
+      console.log('Setting initial display image:', products.mainProduct.image_url);
       setDisplayImage(products.mainProduct.image_url);
     }
   }, [products, displayImage]);
@@ -171,16 +185,29 @@ const ProductPage = () => {
     { name: 'Mango', value: 'mango', description: 'Natural fruit fiber cushioning' }
   ];
 
-  // Helper function to check if variation has image
+  // Helper function to check if variation has image - with detailed logging
   const hasVariationImage = (wood: string, cushion: string) => {
-    const variation = variations.find(v => 
-      v.wood_type === wood && 
-      v.cushion_type === cushion &&
-      v.customized_image_url && 
-      v.customized_image_url.trim() !== ''
-    );
-    console.log(`Checking variation ${wood}+${cushion}:`, variation ? 'Has image' : 'No image');
-    return !!variation;
+    console.log(`=== CHECKING VARIATION IMAGE ===`);
+    console.log(`Looking for: wood=${wood}, cushion=${cushion}`);
+    
+    const variation = variations.find(v => {
+      const woodMatch = v.wood_type === wood;
+      const cushionMatch = v.cushion_type === cushion;
+      const hasImage = v.customized_image_url && v.customized_image_url.trim() !== '';
+      
+      console.log(`Variation check: wood=${v.wood_type}(${woodMatch}), cushion=${v.cushion_type}(${cushionMatch}), hasImage=${hasImage}`);
+      
+      return woodMatch && cushionMatch && hasImage;
+    });
+    
+    const result = !!variation;
+    console.log(`Final result for ${wood}+${cushion}: ${result ? 'HAS IMAGE' : 'NO IMAGE'}`);
+    
+    if (variation) {
+      console.log('Found variation with image:', variation.customized_image_url);
+    }
+    
+    return result;
   };
 
   return (
