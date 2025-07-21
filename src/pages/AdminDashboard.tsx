@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -181,7 +182,7 @@ const AdminDashboard = () => {
         return;
       }
 
-      // First delete any existing products with the same product number
+      // Delete any existing products with the same product number (both main and variations)
       console.log('Deleting existing products with same product number...');
       const { error: deleteError } = await supabase
         .from('products')
@@ -190,9 +191,10 @@ const AdminDashboard = () => {
 
       if (deleteError) {
         console.error('Delete error:', deleteError);
+        // Continue anyway, it might not exist
       }
 
-      // Create main product
+      // Create main product first
       console.log('Creating main product...');
       const mainProductData = {
         name: productData.name,
@@ -202,13 +204,13 @@ const AdminDashboard = () => {
         category: productData.category,
         image_url: productData.image_url,
         description: productData.description || '',
-        view1_image_url: productData.view1_image_url || '',
-        view2_image_url: productData.view2_image_url || '',
-        view3_image_url: productData.view3_image_url || '',
-        view4_image_url: productData.view4_image_url || '',
+        view1_image_url: productData.view1_image_url || null,
+        view2_image_url: productData.view2_image_url || null,
+        view3_image_url: productData.view3_image_url || null,
+        view4_image_url: productData.view4_image_url || null,
         wood_type: null,
         cushion_type: null,
-        customized_image_url: '',
+        customized_image_url: null,
         is_main_variant: true
       };
 
@@ -223,13 +225,13 @@ const AdminDashboard = () => {
 
       console.log('✅ Main product created successfully');
 
-      // Create all variations
+      // Create all variations in smaller batches to avoid conflicts
       const variations = generateVariationCombinations();
       console.log(`Creating ${variations.length} variations...`);
       
       const variationsToInsert = variations.map(variation => {
         const variationImage = variationImages[variation.key];
-        const customizedImageUrl = variationImage?.preview || '';
+        const customizedImageUrl = variationImage?.preview || null;
         
         console.log(`Variation ${variation.key}: ${customizedImageUrl ? 'HAS IMAGE' : 'NO IMAGE'}`);
         
@@ -241,10 +243,10 @@ const AdminDashboard = () => {
           category: productData.category,
           image_url: productData.image_url, // Keep main image as fallback
           description: productData.description || '',
-          view1_image_url: productData.view1_image_url || '',
-          view2_image_url: productData.view2_image_url || '',
-          view3_image_url: productData.view3_image_url || '',
-          view4_image_url: productData.view4_image_url || '',
+          view1_image_url: productData.view1_image_url || null,
+          view2_image_url: productData.view2_image_url || null,
+          view3_image_url: productData.view3_image_url || null,
+          view4_image_url: productData.view4_image_url || null,
           wood_type: variation.wood,
           cushion_type: variation.cushion,
           customized_image_url: customizedImageUrl,
@@ -254,13 +256,20 @@ const AdminDashboard = () => {
 
       console.log('Variations with images:', variationsToInsert.filter(v => v.customized_image_url).length);
 
-      const { error: variationsError } = await supabase
-        .from('products')
-        .insert(variationsToInsert);
+      // Insert variations in batches to avoid timeout
+      const batchSize = 10;
+      for (let i = 0; i < variationsToInsert.length; i += batchSize) {
+        const batch = variationsToInsert.slice(i, i + batchSize);
+        console.log(`Inserting batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(variationsToInsert.length/batchSize)}`);
+        
+        const { error: batchError } = await supabase
+          .from('products')
+          .insert(batch);
 
-      if (variationsError) {
-        console.error('Variations creation error:', variationsError);
-        throw variationsError;
+        if (batchError) {
+          console.error('Batch insert error:', batchError);
+          throw batchError;
+        }
       }
 
       console.log('✅ All variations created successfully');
@@ -293,7 +302,7 @@ const AdminDashboard = () => {
         view4: { file: null, preview: '' }
       });
       setVariationImages({});
-      refetch();
+      await refetch();
 
     } catch (error: any) {
       console.error('Product creation error:', error);
