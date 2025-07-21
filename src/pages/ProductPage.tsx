@@ -1,365 +1,272 @@
 import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import Navigation from "@/components/Navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Plus, Minus, ZoomIn, Heart, Share } from "lucide-react";
-import { Link } from "react-router-dom";
-
-interface ProductDetail {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  category: string;
-  theme: string;
-  product_number: string;
-  description?: string;
-  view1_image_url?: string;
-  view2_image_url?: string;
-  view3_image_url?: string;
-  view4_image_url?: string;
-  wood_type?: string;
-  cushion_type?: string;
-  customized_image_url?: string;
-}
+import { useQuery } from "@tanstack/react-query";
+import { Minus, Plus } from "lucide-react";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
 
 const ProductPage = () => {
-  const { productName } = useParams();
-  const [products, setProducts] = useState<ProductDetail[]>([]);
-  const [currentProduct, setCurrentProduct] = useState<ProductDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedWood, setSelectedWood] = useState<string>('');
-  const [selectedCushion, setSelectedCushion] = useState<string>('');
+  const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedWood, setSelectedWood] = useState("teak");
+  const [selectedCushioning, setSelectedCushioning] = useState("polyester");
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
-  const woodTypes = {
-    'Teak': 'teak',
-    'Walnut': 'walnut', 
-    'Pine': 'pine',
-    'Mango': 'mango',
-    'Plywood': 'plywood'
-  };
-
-  const cushionTypes = {
-    'Polyester': 'polyester',
-    'Foam': 'foam',
-    'Down': 'down', 
-    'Cotton': 'cotton',
-    'Shell': 'shell'
-  };
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!productName) return;
+  // Fetch product and its variations
+  const { data: products, isLoading } = useQuery({
+    queryKey: ['product', id, selectedWood, selectedCushioning],
+    queryFn: async () => {
+      if (!id) return null;
       
-      try {
-        // Fetch all products with the same name (different customizations)
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('name', decodeURIComponent(productName));
+      // First get the main product
+      const { data: mainProduct, error: mainError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (mainError) throw mainError;
+      
+      // Then get all variations with the same name and product_number
+      const { data: variations, error: variationsError } = await supabase
+        .from('products')
+        .select('*')
+        .or(`and(name.eq.${mainProduct.name},product_number.eq.${mainProduct.product_number})`);
+      
+      if (variationsError) throw variationsError;
+      
+      return { mainProduct, variations: variations || [] };
+    },
+  });
 
-        if (error) throw error;
-        if (data && data.length > 0) {
-          setProducts(data);
-          setCurrentProduct(data[0]);
-          setSelectedWood(data[0].wood_type || 'teak');
-          setSelectedCushion(data[0].cushion_type || 'polyester');
-          setSelectedImage(data[0].view1_image_url || data[0].image_url);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
-    fetchProducts();
-  }, [productName]);
+  if (!products || !products.mainProduct) {
+    return <div className="min-h-screen flex items-center justify-center">Product not found</div>;
+  }
 
-  useEffect(() => {
-    // Find product with matching customization
-    const matchingProduct = products.find(p => 
-      p.wood_type === selectedWood && p.cushion_type === selectedCushion
-    );
-    
-    if (matchingProduct) {
-      setCurrentProduct(matchingProduct);
-    }
-  }, [selectedWood, selectedCushion, products]);
+  const { mainProduct, variations } = products;
+  
+  // Find the variation that matches selected options or fall back to main product
+  const currentVariant = variations.find(v => 
+    v.wood_type === selectedWood && v.cushion_type === selectedCushioning
+  ) || mainProduct;
+
+  // Product images - using the view images from the current variant
+  const productImages = [
+    currentVariant.customized_image_url,
+    currentVariant.view1_image_url,
+    currentVariant.view2_image_url,
+    currentVariant.view3_image_url,
+    currentVariant.view4_image_url,
+  ].filter(Boolean);
 
   const handleQuantityChange = (change: number) => {
     setQuantity(prev => Math.max(1, prev + change));
   };
 
-  const getImageGallery = () => {
-    if (!currentProduct) return [];
-    return [
-      currentProduct.view1_image_url || currentProduct.image_url,
-      currentProduct.view2_image_url,
-      currentProduct.view3_image_url,
-      currentProduct.view4_image_url
-    ].filter(Boolean);
-  };
+  const woodOptions = [
+    { name: 'Teak', value: 'teak' },
+    { name: 'Walnut', value: 'walnut' },
+    { name: 'Pine', value: 'pine' },
+    { name: 'Mango', value: 'mango' },
+    { name: 'Plywood', value: 'plywood' }
+  ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-48"></div>
-            <div className="h-4 bg-muted rounded w-32"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentProduct) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-2xl font-serif text-foreground mb-4">Product Not Found</h1>
-          <Link to="/" className="text-primary hover:text-primary/80 transition-colors">
-            Return to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const cushioningOptions = [
+    { name: 'Polyester', value: 'polyester' },
+    { name: 'Foam', value: 'foam' },
+    { name: 'Cotton', value: 'cotton' },
+    { name: 'Shell', value: 'shell' }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      {/* Breadcrumb */}
-      <div className="border-b">
-        <div className="container mx-auto px-6 py-4">
-          <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-            <span>/</span>
-            <Link to={`/themes/${currentProduct.theme}`} className="hover:text-foreground transition-colors">
-              {currentProduct.theme.replace('-', ' ').toUpperCase()}
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">{currentProduct.name}</span>
-          </nav>
-        </div>
-      </div>
-
       <div className="container mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-7xl mx-auto">
           
           {/* Left Side - Product Images */}
           <div className="space-y-6">
-            {/* Main Product Image */}
-            <div className="aspect-square bg-card rounded-lg overflow-hidden group relative">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <div className="cursor-zoom-in relative">
-                    <img 
-                      src={selectedImage} 
-                      alt={currentProduct.name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="bg-black/50 text-white p-2 rounded-full">
-                        <ZoomIn className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl">
-                  <img 
-                    src={selectedImage} 
-                    alt={currentProduct.name}
-                    className="w-full h-auto"
-                  />
-                </DialogContent>
-              </Dialog>
+            <div>
+              <h1 className="text-4xl font-bold text-foreground mb-2">{mainProduct.name}</h1>
+              <p className="text-muted-foreground text-lg">Code: {mainProduct.product_number}</p>
             </div>
 
-            {/* Thumbnail Images */}
-            <div className="grid grid-cols-4 gap-3">
-              {getImageGallery().map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(image)}
-                  className={`aspect-square bg-card rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImage === image 
-                      ? 'border-primary' 
-                      : 'border-transparent hover:border-muted-foreground/30'
-                  }`}
-                >
-                  <img 
-                    src={image} 
-                    alt={`View ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+            <div className="flex items-baseline gap-4">
+              <span className="text-3xl font-bold text-foreground">₹{currentVariant.price?.toLocaleString()}</span>
+            </div>
+
+            <div className="prose max-w-none">
+              <p className="text-muted-foreground leading-relaxed">
+                {mainProduct.description || "Experience exceptional craftsmanship with this beautiful piece of furniture. Each item is carefully crafted with attention to detail and premium materials."}
+              </p>
+            </div>
+
+            {/* Main Product Image and Grid */}
+            <div className="space-y-4">
+              {productImages.length > 0 && (
+                <>
+                  {/* Main Image */}
+                  <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
+                    <Dialog>
+                      <DialogTrigger className="w-full h-full">
+                        <img 
+                          src={productImages[selectedImage]} 
+                          alt={mainProduct.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                        />
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <img 
+                          src={productImages[selectedImage]} 
+                          alt={mainProduct.name}
+                          className="w-full h-auto"
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  {/* Thumbnail Grid */}
+                  {productImages.length > 1 && (
+                    <div className="grid grid-cols-3 gap-3">
+                      {productImages.slice(1, 4).map((image, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => setSelectedImage(index + 1)}
+                          className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-all ${
+                            selectedImage === index + 1 
+                              ? 'border-primary' 
+                              : 'border-transparent hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <img 
+                            src={image} 
+                            alt={`View ${index + 2}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
-          {/* Right Side - Product Details */}
+          {/* Right Side - Customization and Order */}
           <div className="space-y-8">
-            {/* Product Header */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-serif text-foreground mb-2">{currentProduct.name}</h1>
-                  <p className="text-sm text-muted-foreground">Code: {currentProduct.product_number}</p>
+            {/* Large Customized Image */}
+            <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
+              <img 
+                src={currentVariant.customized_image_url || currentVariant.image_url} 
+                alt="Customized view"
+                className="w-full h-full object-cover"
+              />
+              {!currentVariant.customized_image_url && (
+                <div className="w-full h-full flex items-center justify-center bg-muted">
+                  <span className="text-muted-foreground">Coming Soon</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="icon">
-                    <Heart className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Share className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="text-3xl font-bold text-foreground">
-                ₹{currentProduct.price.toLocaleString()}
-              </div>
+              )}
             </div>
 
-            {/* Product Description */}
-            {currentProduct.description && (
-              <div className="prose prose-sm max-w-none">
-                <p className="text-muted-foreground leading-relaxed">{currentProduct.description}</p>
-              </div>
-            )}
-
-            {/* Customization Section */}
-            <div className="space-y-6 bg-card p-6 rounded-lg">
-              <h3 className="text-lg font-semibold">Customize Your Piece</h3>
-              
+            {/* Customization Options - Small beside the image */}
+            <div className="flex gap-8">
               {/* Wood Selection */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium">Wood Type</label>
+              <div className="flex-1 space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Wood Selection</h3>
                 <div className="space-y-2">
-                  <div className="grid grid-cols-4 gap-2">
-                    {['Teak', 'Walnut', 'Pine', 'Mango'].map((wood) => (
-                      <button
-                        key={wood}
-                        onClick={() => setSelectedWood(woodTypes[wood as keyof typeof woodTypes])}
-                        className={`aspect-square rounded-lg border-2 p-2 transition-all hover:shadow-md ${
-                          selectedWood === woodTypes[wood as keyof typeof woodTypes]
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border hover:border-muted-foreground/30'
-                        }`}
-                      >
-                        <div className="w-full h-3/4 bg-gradient-to-br from-amber-200 to-amber-600 rounded mb-1"></div>
-                        <div className="text-xs font-medium">{wood}</div>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-muted-foreground">OR</span>
+                  {woodOptions.map((wood) => (
                     <button
-                      onClick={() => setSelectedWood('plywood')}
-                      className={`px-4 py-2 rounded-md border text-xs transition-all ${
-                        selectedWood === 'plywood'
+                      key={wood.value}
+                      onClick={() => setSelectedWood(wood.value)}
+                      className={`flex items-center gap-2 p-2 text-xs rounded-md border transition-all ${
+                        selectedWood === wood.value
                           ? 'border-primary bg-primary/5 text-primary' 
                           : 'border-border hover:border-muted-foreground/30'
                       }`}
                     >
-                      Plywood
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cushioning Selection */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium">Cushioning</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {Object.entries(cushionTypes).map(([display, value]) => (
-                    <button
-                      key={value}
-                      onClick={() => setSelectedCushion(value)}
-                      className={`aspect-square rounded-lg border-2 p-2 transition-all hover:shadow-md ${
-                        selectedCushion === value
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-muted-foreground/30'
-                      }`}
-                    >
-                      <div className="w-full h-3/4 bg-gradient-to-br from-blue-200 to-blue-400 rounded mb-1"></div>
-                      <div className="text-xs font-medium">{display}</div>
+                      <div className="w-4 h-4 bg-gradient-to-br from-amber-200 to-amber-600 rounded"></div>
+                      {wood.name}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Customization Note */}
-              <div className="bg-primary/5 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  All dimensions can be customized to fit your space perfectly. Contact us for personalized measurements.
-                </p>
-              </div>
-            </div>
-
-            {/* Quantity and Add to Cart */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <label className="text-sm font-medium">Quantity</label>
-                <div className="flex items-center border border-border rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity === 1}
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="px-4 py-2 min-w-[3rem] text-center">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(1)}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Button size="lg" className="w-full">
-                  Contact for Custom Order
-                </Button>
-                <Button variant="outline" size="lg" className="w-full">
-                  Request Quote
-                </Button>
-              </div>
-            </div>
-
-            {/* Additional Info */}
-            <div className="space-y-4 pt-6 border-t border-border">
-              <div className="text-sm space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Category:</span>
-                  <span>{currentProduct.category}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Theme:</span>
-                  <span>{currentProduct.theme.replace('-', ' ')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Estimated Delivery:</span>
-                  <span>4-6 weeks</span>
+              {/* Cushioning Options */}
+              <div className="flex-1 space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Cushioning Options</h3>
+                <div className="space-y-2">
+                  {cushioningOptions.map((cushion) => (
+                    <button
+                      key={cushion.value}
+                      onClick={() => setSelectedCushioning(cushion.value)}
+                      className={`flex items-center gap-2 p-2 text-xs rounded-md border transition-all ${
+                        selectedCushioning === cushion.value
+                          ? 'border-primary bg-primary/5 text-primary' 
+                          : 'border-border hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <div className="w-4 h-4 bg-gradient-to-br from-blue-200 to-blue-400 rounded"></div>
+                      {cushion.name}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
+
+            <Card className="p-6">
+              {/* Quantity Selector */}
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center gap-4">
+                  <span className="font-medium">Quantity:</span>
+                  <div className="flex items-center border rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleQuantityChange(-1)}
+                      disabled={quantity === 1}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <span className="px-4 py-2 min-w-[3rem] text-center">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleQuantityChange(1)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Button */}
+              <Button 
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 text-lg font-semibold"
+                onClick={() => setIsContactFormOpen(true)}
+              >
+                Contact for Custom Order
+              </Button>
+            </Card>
           </div>
         </div>
       </div>
+
+      <ContactFormDialog
+        isOpen={isContactFormOpen}
+        onClose={() => setIsContactFormOpen(false)}
+        productName={mainProduct.name}
+        productCode={mainProduct.product_number}
+        selectedWood={selectedWood}
+        selectedCushioning={selectedCushioning}
+      />
     </div>
   );
 };

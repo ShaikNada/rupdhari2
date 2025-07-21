@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,13 +10,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getThemeNames, getCategoryNames } from '@/data/furnitureData';
-import { Upload, Package, Settings, Plus, Image, Sparkles, Palette, Grid } from 'lucide-react';
+import { Upload, Package, Settings, Plus, Image, Sparkles, Palette, Grid, Trash2, Eye } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useProducts } from "@/hooks/useProducts";
+import { OrdersTab } from "@/components/OrdersTab";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('post');
   const [loading, setLoading] = useState(false);
+  const { products, refetch } = useProducts();
 
   // Form states for furniture card
   const [cardData, setCardData] = useState({
@@ -228,6 +233,39 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fetch orders
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error: any) {
+      console.error('Error fetching orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch orders",
+        variant: "destructive",
+      });
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // Get main products for variation selection
+  const mainProducts = products.filter(p => p.name && p.product_number);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
       {/* Premium Admin Header */}
@@ -243,8 +281,8 @@ const AdminDashboard = () => {
               </div>
               <nav className="flex space-x-1">
                 <Button
-                  variant={activeTab === 'order' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('order')}
+                  variant={activeTab === 'orders' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('orders')}
                   className="px-6"
                 >
                   <Package className="w-4 h-4 mr-2" />
@@ -276,18 +314,8 @@ const AdminDashboard = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {activeTab === 'order' && (
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
-              <CardTitle className="flex items-center space-x-2">
-                <Package className="w-5 h-5" />
-                <span>Order Management</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-8">
-              <p className="text-muted-foreground">Advanced order management system coming soon...</p>
-            </CardContent>
-          </Card>
+        {activeTab === 'orders' && (
+          <OrdersTab />
         )}
 
         {activeTab === 'feedback' && (

@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          created_at: string
+          cushioning_type: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          customization_message: string | null
+          id: string
+          order_status: string | null
+          product_code: string
+          product_name: string
+          updated_at: string
+          wood_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          cushioning_type?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          customization_message?: string | null
+          id?: string
+          order_status?: string | null
+          product_code: string
+          product_name: string
+          updated_at?: string
+          wood_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          cushioning_type?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          customization_message?: string | null
+          id?: string
+          order_status?: string | null
+          product_code?: string
+          product_name?: string
+          updated_at?: string
+          wood_type?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string
@@ -23,7 +68,9 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_main_variant: boolean | null
           name: string
+          parent_product_id: string | null
           price: number
           product_number: string
           theme: string
@@ -42,7 +89,9 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_main_variant?: boolean | null
           name: string
+          parent_product_id?: string | null
           price: number
           product_number: string
           theme: string
@@ -61,7 +110,9 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_main_variant?: boolean | null
           name?: string
+          parent_product_id?: string | null
           price?: number
           product_number?: string
           theme?: string
@@ -72,7 +123,15 @@ export type Database = {
           view4_image_url?: string | null
           wood_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
