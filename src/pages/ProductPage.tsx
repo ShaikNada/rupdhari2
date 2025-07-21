@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Minus, Plus, ChevronLeft, ChevronRight, Heart, Star } from "lucide-react";
 import { ContactFormDialog } from "@/components/ContactFormDialog";
+import Navigation from "@/components/Navigation";
 
 const ProductPage = () => {
   const { productName } = useParams();
@@ -140,6 +140,8 @@ const ProductPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <Navigation />
+      
       <div className="container mx-auto px-4 py-8 lg:py-12">
         <div className="max-w-7xl mx-auto">
           
@@ -327,7 +329,7 @@ const ProductPage = () => {
                           className="w-full h-full object-cover transition-all duration-500"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-muted/50 to-muted/20">
                           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                             <span className="text-2xl">📷</span>
                           </div>
@@ -372,7 +374,6 @@ const ProductPage = () => {
                     <h4 className="font-medium text-lg">Solid Wood</h4>
                     <div className="grid grid-cols-2 gap-3">
                       {woodOptions.filter(wood => wood.type === 'solid').map((wood) => {
-                        // Find variation image for this wood with current cushioning
                         const variation = variations.find(v => 
                           v.wood_type === wood.value && v.cushion_type === selectedCushioning && !v.is_main_variant
                         );
