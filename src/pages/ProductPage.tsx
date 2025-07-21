@@ -130,6 +130,14 @@ const ProductPage = () => {
     { name: 'Shell', value: 'shell', description: 'Firm structural support' }
   ];
 
+  // Helper function to check if variation has image
+  const hasVariationImage = (wood: string, cushion: string) => {
+    const variation = variations.find(v => 
+      v.wood_type === wood && v.cushion_type === cushion && !v.is_main_variant
+    );
+    return variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 py-8 lg:py-12">
@@ -312,11 +320,22 @@ const ProductPage = () => {
                   <div className="sticky top-8">
                     <h3 className="text-xl font-semibold mb-4 text-center">Your Configuration</h3>
                     <div className="aspect-square bg-muted/30 rounded-2xl overflow-hidden shadow-elegant">
-                      <img 
-                        src={mainImage || mainProduct.image_url} 
-                        alt="Customized view"
-                        className="w-full h-full object-cover transition-all duration-500"
-                      />
+                      {hasVariationImage(selectedWood, selectedCushioning) ? (
+                        <img 
+                          src={mainImage || mainProduct.image_url} 
+                          alt="Customized view"
+                          className="w-full h-full object-cover transition-all duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                            <span className="text-2xl">📷</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-medium">
+                            Stay tuned, you will be notified if this variation is available
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-4 p-4 bg-background/50 rounded-xl">
                       <div className="text-sm space-y-2">
@@ -332,6 +351,11 @@ const ProductPage = () => {
                           <span className="text-muted-foreground">Price:</span>
                           <span className="font-bold text-primary">₹{currentVariant.price?.toLocaleString()}</span>
                         </div>
+                        {!hasVariationImage(selectedWood, selectedCushioning) && (
+                          <div className="text-xs text-orange-600 pt-2 border-t">
+                            This combination is not currently available
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -352,6 +376,7 @@ const ProductPage = () => {
                         const variation = variations.find(v => 
                           v.wood_type === wood.value && v.cushion_type === selectedCushioning && !v.is_main_variant
                         );
+                        const hasImage = variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
                         
                         return (
                           <button
@@ -364,14 +389,17 @@ const ProductPage = () => {
                             }`}
                           >
                             <div className="aspect-square bg-gradient-to-br from-amber-100 to-amber-300 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                              {variation?.customized_image_url ? (
+                              {hasImage ? (
                                 <img 
                                   src={variation.customized_image_url} 
                                   alt={wood.name}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-amber-800 rounded"></div>
+                                <div className="text-center p-2">
+                                  <div className="w-6 h-6 bg-gradient-to-br from-amber-600 to-amber-800 rounded mx-auto mb-1"></div>
+                                  <span className="text-xs text-muted-foreground">Coming Soon</span>
+                                </div>
                               )}
                             </div>
                             <div className="space-y-1">
@@ -391,6 +419,7 @@ const ProductPage = () => {
                         const variation = variations.find(v => 
                           v.wood_type === wood.value && v.cushion_type === selectedCushioning && !v.is_main_variant
                         );
+                        const hasImage = variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
                         
                         return (
                           <button
@@ -404,14 +433,17 @@ const ProductPage = () => {
                           >
                             <div className="flex items-center gap-4">
                               <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
-                                {variation?.customized_image_url ? (
+                                {hasImage ? (
                                   <img 
                                     src={variation.customized_image_url} 
                                     alt={wood.name}
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded"></div>
+                                  <div className="text-center">
+                                    <div className="w-6 h-6 bg-gradient-to-br from-gray-600 to-gray-800 rounded mx-auto mb-1"></div>
+                                    <span className="text-xs text-muted-foreground">Coming Soon</span>
+                                  </div>
                                 )}
                               </div>
                               <div className="space-y-1">
@@ -438,6 +470,7 @@ const ProductPage = () => {
                       const variation = variations.find(v => 
                         v.wood_type === selectedWood && v.cushion_type === cushion.value && !v.is_main_variant
                       );
+                      const hasImage = variation && variation.customized_image_url && variation.customized_image_url.trim() !== '';
                       
                       return (
                         <button
@@ -451,14 +484,17 @@ const ProductPage = () => {
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-300 rounded-lg flex items-center justify-center overflow-hidden">
-                              {variation?.customized_image_url ? (
+                              {hasImage ? (
                                 <img 
                                   src={variation.customized_image_url} 
                                   alt={cushion.name}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-800 rounded"></div>
+                                <div className="text-center">
+                                  <div className="w-4 h-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded mx-auto mb-1"></div>
+                                  <span className="text-xs text-muted-foreground">Soon</span>
+                                </div>
                               )}
                             </div>
                             <div className="space-y-1">

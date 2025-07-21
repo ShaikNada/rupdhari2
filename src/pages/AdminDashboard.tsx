@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getThemeNames, getCategoryNames } from '@/data/furnitureData';
-import { Upload, Package, Settings, Plus, Image, Sparkles, Palette, Grid, Trash2, Eye } from 'lucide-react';
+import { Upload, Package, Settings, Plus, Image, Sparkles, Palette, Grid, Trash2, Eye, RefreshCw } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProducts } from "@/hooks/useProducts";
@@ -73,6 +73,58 @@ const AdminDashboard = () => {
   // Wood and cushioning options
   const woodOptions = ['teak', 'walnut', 'pine', 'mango', 'plywood'];
   const cushionOptions = ['polyester', 'foam', 'down', 'cotton', 'shell'];
+
+  // Generate unique product number
+  const generateProductNumber = async () => {
+    let isUnique = false;
+    let productNumber = '';
+    
+    while (!isUnique) {
+      // Generate a random product number in format FRN-XXXX
+      const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      productNumber = `FRN-${randomNum}`;
+      
+      // Check if this number already exists
+      const { data, error } = await supabase
+        .from('products')
+        .select('id')
+        .eq('product_number', productNumber)
+        .limit(1);
+      
+      if (error) {
+        console.error('Error checking product number:', error);
+        break;
+      }
+      
+      if (!data || data.length === 0) {
+        isUnique = true;
+      }
+    }
+    
+    setCardData(prev => ({ ...prev, product_number: productNumber }));
+    toast({
+      title: "Product Number Generated",
+      description: `Generated unique product number: ${productNumber}`,
+    });
+  };
+
+  // Check if product number exists
+  const checkProductNumber = async (productNumber: string) => {
+    if (!productNumber) return false;
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select('id')
+      .eq('product_number', productNumber)
+      .limit(1);
+    
+    if (error) {
+      console.error('Error checking product number:', error);
+      return false;
+    }
+    
+    return data && data.length > 0;
+  };
 
   // Generate variation combinations
   const generateVariationCombinations = () => {
@@ -161,6 +213,17 @@ const AdminDashboard = () => {
     setLoading(true);
 
     try {
+      // Check if product number already exists
+      const exists = await checkProductNumber(cardData.product_number);
+      if (exists) {
+        toast({
+          title: "Product Number Already Exists",
+          description: "This product number is already in use. Please use a different number or generate a new one.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('products')
         .insert([{
@@ -181,7 +244,17 @@ const AdminDashboard = () => {
           is_main_variant: true
         }]);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast({
+            title: "Product Number Already Exists",
+            description: "This product number is already in use. Please use a different number.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Main Product Created",
@@ -226,42 +299,48 @@ const AdminDashboard = () => {
         throw new Error("Please create the main product first before adding variations");
       }
 
-      // Create all variations
+      // Create all variations (including those without images)
       const variations = generateVariationCombinations();
       const variationsToInsert = [];
 
       for (const variation of variations) {
         const variationImage = variationImages[variation.key];
-        if (variationImage && variationImage.preview) {
-          variationsToInsert.push({
-            name: productData.name,
-            price: parseFloat(productData.price),
-            product_number: productData.product_number,
-            theme: selectedMainProduct.theme,
-            category: selectedMainProduct.category,
-            image_url: variationImage.preview,
-            description: productData.description,
-            view1_image_url: productData.view1_image_url,
-            view2_image_url: productData.view2_image_url,
-            view3_image_url: productData.view3_image_url,
-            view4_image_url: productData.view4_image_url,
-            wood_type: variation.wood,
-            cushion_type: variation.cushion,
-            customized_image_url: variationImage.preview,
-            is_main_variant: false
-          });
-        }
-      }
-
-      if (variationsToInsert.length === 0) {
-        throw new Error("Please upload at least one variation image");
+        
+        // Insert variation even if no image is uploaded (will use placeholder on frontend)
+        variationsToInsert.push({
+          name: productData.name,
+          price: parseFloat(productData.price),
+          product_number: productData.product_number,
+          theme: selectedMainProduct.theme,
+          category: selectedMainProduct.category,
+          image_url: variationImage?.preview || '', // Empty string if no image
+          description: productData.description,
+          view1_image_url: productData.view1_image_url,
+          view2_image_url: productData.view2_image_url,
+          view3_image_url: productData.view3_image_url,
+          view4_image_url: productData.view4_image_url,
+          wood_type: variation.wood,
+          cushion_type: variation.cushion,
+          customized_image_url: variationImage?.preview || '', // Empty string if no image
+          is_main_variant: false
+        });
       }
 
       const { error } = await supabase
         .from('products')
         .insert(variationsToInsert);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast({
+            title: "Duplicate Product Found",
+            description: "Some variations already exist. Please check your product data.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Product Variations Created",
@@ -464,15 +543,26 @@ const AdminDashboard = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="card-number">Product Code</Label>
-                      <Input
-                        id="card-number"
-                        type="text"
-                        placeholder="FRN-001"
-                        value={cardData.product_number}
-                        onChange={(e) => setCardData({...cardData, product_number: e.target.value})}
-                        className="h-12"
-                        required
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          id="card-number"
+                          type="text"
+                          placeholder="FRN-001"
+                          value={cardData.product_number}
+                          onChange={(e) => setCardData({...cardData, product_number: e.target.value})}
+                          className="h-12 flex-1"
+                          required
+                        />
+                        <Button
+                          type="button"
+                          onClick={generateProductNumber}
+                          variant="outline"
+                          className="h-12 px-4"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Click the refresh button to generate a unique product number</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="card-theme">Theme</Label>
@@ -635,6 +725,9 @@ const AdminDashboard = () => {
                       <p className="text-muted-foreground mt-2">Upload images for each wood type and cushioning combination</p>
                       <p className="text-sm text-muted-foreground mt-1">
                         Total combinations: {woodOptions.length} wood types × {cushionOptions.length} cushioning types = {woodOptions.length * cushionOptions.length} variations
+                      </p>
+                      <p className="text-xs text-orange-600 mt-2">
+                        Note: Variations without images will show placeholder text for customers
                       </p>
                     </div>
 
