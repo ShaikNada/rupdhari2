@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getThemeNames, getCategoryNames } from '@/data/furnitureData';
@@ -45,7 +46,8 @@ const AdminDashboard = () => {
     wood_type: '',
     cushion_type: '',
     customized_image_url: '',
-    price: ''
+    price: '',
+    is_main_variant: false
   });
 
   const [cardImageFile, setCardImageFile] = useState<File | null>(null);
@@ -114,7 +116,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Submit furniture card
+  // Submit furniture card (main variant)
   const handleCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -136,14 +138,15 @@ const AdminDashboard = () => {
           view4_image_url: '',
           wood_type: '',
           cushion_type: '',
-          customized_image_url: ''
+          customized_image_url: '',
+          is_main_variant: true
         }]);
 
       if (error) throw error;
 
       toast({
-        title: "Furniture Card Created",
-        description: "Card has been added to theme and category sections",
+        title: "Main Product Created",
+        description: "Main product variant has been added successfully",
       });
 
       // Reset card form
@@ -157,6 +160,7 @@ const AdminDashboard = () => {
       });
       setCardImageFile(null);
       setCardImagePreview('');
+      refetch();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -168,21 +172,30 @@ const AdminDashboard = () => {
     }
   };
 
-  // Submit product page
+  // Submit product variation
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Find the main product to get the base details
+      const selectedMainProduct = products.find(p => 
+        p.name === productData.name && p.product_number === productData.product_number
+      );
+
+      if (!selectedMainProduct) {
+        throw new Error("Please create the main product first before adding variations");
+      }
+
       const { error } = await supabase
         .from('products')
         .insert([{
           name: productData.name,
           price: parseFloat(productData.price),
           product_number: productData.product_number,
-          theme: cardData.theme || 'modern', // Use theme from card section
-          category: cardData.category || 'chairs', // Use category from card section
-          image_url: viewImages.view1.preview || productData.view1_image_url,
+          theme: selectedMainProduct.theme,
+          category: selectedMainProduct.category,
+          image_url: productData.view1_image_url || productData.customized_image_url,
           description: productData.description,
           view1_image_url: productData.view1_image_url,
           view2_image_url: productData.view2_image_url,
@@ -190,14 +203,15 @@ const AdminDashboard = () => {
           view4_image_url: productData.view4_image_url,
           wood_type: productData.wood_type,
           cushion_type: productData.cushion_type,
-          customized_image_url: productData.customized_image_url
+          customized_image_url: productData.customized_image_url,
+          is_main_variant: false
         }]);
 
       if (error) throw error;
 
       toast({
-        title: "Product Page Created",
-        description: "Detailed product page with customization options has been created",
+        title: "Product Variation Created",
+        description: "Product variation with customization options has been created",
       });
 
       // Reset product form
@@ -212,7 +226,8 @@ const AdminDashboard = () => {
         wood_type: '',
         cushion_type: '',
         customized_image_url: '',
-        price: ''
+        price: '',
+        is_main_variant: false
       });
       setViewImages({
         view1: { file: null, preview: '' },
@@ -222,6 +237,7 @@ const AdminDashboard = () => {
       });
       setCustomImageFile(null);
       setCustomImagePreview('');
+      refetch();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -334,7 +350,7 @@ const AdminDashboard = () => {
 
         {activeTab === 'post' && (
           <div className="space-y-8">
-            {/* Section 1: Furniture Card */}
+            {/* Section 1: Main Product Card */}
             <Card className="border-0 shadow-xl overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8">
                 <div className="flex items-center space-x-3">
@@ -342,8 +358,8 @@ const AdminDashboard = () => {
                     <Grid className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl">Section 1: Furniture Card</CardTitle>
-                    <p className="text-muted-foreground mt-1">Create beautiful cards for theme and category pages</p>
+                    <CardTitle className="text-2xl">Step 1: Create Main Product</CardTitle>
+                    <p className="text-muted-foreground mt-1">Create the main product that will appear in theme and category pages</p>
                   </div>
                 </div>
               </CardHeader>
@@ -351,7 +367,7 @@ const AdminDashboard = () => {
                 <form onSubmit={handleCardSubmit} className="space-y-6">
                   {/* Image Upload */}
                   <div className="space-y-4">
-                    <Label className="text-base font-medium">Product Image</Label>
+                    <Label className="text-base font-medium">Main Product Image</Label>
                     <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
                       <input
                         type="file"
@@ -375,7 +391,7 @@ const AdminDashboard = () => {
                             </div>
                           )}
                           <p className="text-sm text-muted-foreground">
-                            {cardImagePreview ? 'Click to change image' : 'Upload product image'}
+                            {cardImagePreview ? 'Click to change image' : 'Upload main product image'}
                           </p>
                         </div>
                       </Label>
@@ -397,7 +413,7 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="card-number">Code Number</Label>
+                      <Label htmlFor="card-number">Product Code</Label>
                       <Input
                         id="card-number"
                         type="text"
@@ -447,7 +463,7 @@ const AdminDashboard = () => {
                       </Select>
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="card-price">Price (₱)</Label>
+                      <Label htmlFor="card-price">Base Price (₹)</Label>
                       <Input
                         id="card-price"
                         type="number"
@@ -463,13 +479,13 @@ const AdminDashboard = () => {
 
                   <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
                     <Plus className="w-5 h-5 mr-2" />
-                    {loading ? 'Creating Card...' : 'Add Furniture Card'}
+                    {loading ? 'Creating Main Product...' : 'Create Main Product'}
                   </Button>
                 </form>
               </CardContent>
             </Card>
 
-            {/* Section 2: Product Page */}
+            {/* Section 2: Product Variations */}
             <Card className="border-0 shadow-xl overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-secondary/10 via-secondary/5 to-transparent p-8">
                 <div className="flex items-center space-x-3">
@@ -477,33 +493,45 @@ const AdminDashboard = () => {
                     <Palette className="w-5 h-5 text-secondary-foreground" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl">Section 2: Product Page</CardTitle>
-                    <p className="text-muted-foreground mt-1">Create detailed product pages with customization options</p>
+                    <CardTitle className="text-2xl">Step 2: Add Product Variations</CardTitle>
+                    <p className="text-muted-foreground mt-1">Create customized variations with different wood types and cushioning</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-8">
                 <form onSubmit={handleProductSubmit} className="space-y-8">
-                  {/* Basic Info */}
+                  {/* Product Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Product Name</Label>
-                      <Input
-                        type="text"
-                        placeholder="Elegant Modern Chair"
-                        value={productData.name}
-                        onChange={(e) => setProductData({...productData, name: e.target.value})}
-                        className="h-12"
+                      <Label>Select Existing Product</Label>
+                      <Select
+                        value={`${productData.name}|${productData.product_number}`}
+                        onValueChange={(value) => {
+                          const [name, product_number] = value.split('|');
+                          setProductData({...productData, name, product_number});
+                        }}
                         required
-                      />
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Choose a main product" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mainProducts.map((product) => (
+                            <SelectItem key={product.id} value={`${product.name}|${product.product_number}`}>
+                              {product.name} ({product.product_number})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Code Number</Label>
+                      <Label>Variation Price (₹)</Label>
                       <Input
-                        type="text"
-                        placeholder="FRN-001"
-                        value={productData.product_number}
-                        onChange={(e) => setProductData({...productData, product_number: e.target.value})}
+                        type="number"
+                        step="0.01"
+                        placeholder="25,000.00"
+                        value={productData.price}
+                        onChange={(e) => setProductData({...productData, price: e.target.value})}
                         className="h-12"
                         required
                       />
@@ -512,7 +540,7 @@ const AdminDashboard = () => {
 
                   {/* Product Views */}
                   <div className="space-y-4">
-                    <Label className="text-base font-medium">Product Views (1, 2, 3, 4)</Label>
+                    <Label className="text-base font-medium">Product View Images</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {['view1', 'view2', 'view3', 'view4'].map((view, index) => (
                         <div key={view} className="space-y-2">
@@ -549,7 +577,7 @@ const AdminDashboard = () => {
                     <Label>Product Description</Label>
                     <Textarea
                       rows={4}
-                      placeholder="Describe the craftsmanship, materials, and unique features of this piece..."
+                      placeholder="Describe the craftsmanship, materials, and unique features of this variation..."
                       value={productData.description}
                       onChange={(e) => setProductData({ ...productData, description: e.target.value })}
                       className="resize-none"
@@ -558,7 +586,7 @@ const AdminDashboard = () => {
 
                   {/* Customized Furniture Image */}
                   <div className="space-y-4">
-                    <Label className="text-base font-medium">Customized Furniture Image</Label>
+                    <Label className="text-base font-medium">Customized Configuration Image</Label>
                     <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
                       <input
                         type="file"
@@ -566,6 +594,7 @@ const AdminDashboard = () => {
                         onChange={handleCustomImageChange}
                         className="hidden"
                         id="custom-image-upload"
+                        required
                       />
                       <Label htmlFor="custom-image-upload" className="cursor-pointer">
                         <div className="space-y-3">
@@ -581,7 +610,7 @@ const AdminDashboard = () => {
                             </div>
                           )}
                           <p className="text-sm text-muted-foreground">
-                            {customImagePreview ? 'Click to change customized image' : 'Upload customized furniture image'}
+                            {customImagePreview ? 'Click to change customized image' : 'Upload the final customized configuration image'}
                           </p>
                         </div>
                       </Label>
@@ -593,78 +622,59 @@ const AdminDashboard = () => {
                     {/* Wood Options */}
                     <div className="space-y-4">
                       <Label className="text-base font-medium">Wood Type</Label>
-                      <div className="space-y-4">
+                      <RadioGroup 
+                        value={productData.wood_type} 
+                        onValueChange={(value) => setProductData({...productData, wood_type: value})}
+                        className="space-y-4"
+                      >
                         <div className="space-y-3">
-                          <p className="text-sm text-muted-foreground">Solid Wood</p>
+                          <p className="text-sm font-medium text-muted-foreground">Solid Wood</p>
                           <div className="grid grid-cols-2 gap-3">
                             {['teak', 'walnut', 'pine', 'mango'].map((wood) => (
-                              <Label key={wood} className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                                <input
-                                  type="radio"
-                                  name="wood_type"
-                                  value={wood}
-                                  checked={productData.wood_type === wood}
-                                  onChange={(e) => setProductData({...productData, wood_type: e.target.value})}
-                                  className="text-primary"
-                                />
+                              <Label 
+                                key={wood} 
+                                className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                              >
+                                <RadioGroupItem value={wood} />
                                 <span className="capitalize">{wood}</span>
                               </Label>
                             ))}
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground mb-3">Alternative</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-3">Engineered Wood</p>
                           <Label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={productData.wood_type === 'plywood'}
-                              onChange={(e) => setProductData({...productData, wood_type: e.target.checked ? 'plywood' : ''})}
-                              className="text-primary rounded"
-                            />
+                            <RadioGroupItem value="plywood" />
                             <span>Plywood</span>
                           </Label>
                         </div>
-                      </div>
+                      </RadioGroup>
                     </div>
 
                     {/* Cushioning Options */}
                     <div className="space-y-4">
                       <Label className="text-base font-medium">Cushioning Type</Label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <RadioGroup 
+                        value={productData.cushion_type} 
+                        onValueChange={(value) => setProductData({...productData, cushion_type: value})}
+                        className="space-y-3"
+                      >
                         {['polyester', 'foam', 'down', 'cotton', 'shell'].map((cushion) => (
-                          <Label key={cushion} className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                            <input
-                              type="radio"
-                              name="cushion_type"
-                              value={cushion}
-                              checked={productData.cushion_type === cushion}
-                              onChange={(e) => setProductData({...productData, cushion_type: e.target.value})}
-                              className="text-primary"
-                            />
+                          <Label 
+                            key={cushion} 
+                            className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <RadioGroupItem value={cushion} />
                             <span className="capitalize">{cushion}</span>
                           </Label>
                         ))}
-                      </div>
+                      </RadioGroup>
                     </div>
                   </div>
 
-                  {/* Price */}
-                  <div className="space-y-2">
-                    <Label>Price (₱)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="25,000.00"
-                      value={productData.price}
-                      onChange={(e) => setProductData({...productData, price: e.target.value})}
-                      className="h-12"
-                      required
-                    />
-                  </div>
-
-                  <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
+                  <Button type="submit" className="w-full h-12 text-base" disabled={loading || !productData.name}>
                     <Plus className="w-5 h-5 mr-2" />
-                    {loading ? 'Creating Product Page...' : 'Add Product Page'}
+                    {loading ? 'Creating Variation...' : 'Add Product Variation'}
                   </Button>
                 </form>
               </CardContent>
