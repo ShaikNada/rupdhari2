@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import ThemesSection from "@/components/ThemesSection";
 import CategoriesSection from "@/components/CategoriesSection";
+import { Footer } from "@/components/Footer";
 
 const Collection = () => {
   return (
@@ -24,6 +25,8 @@ const Collection = () => {
       
       {/* Categories Section */}
       <CategoriesSection />
+      
+      <Footer />
     </div>
   );
 };

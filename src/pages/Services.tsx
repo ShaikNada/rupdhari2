@@ -1,4 +1,5 @@
 import Navigation from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 
 const Services = () => {
   return (
@@ -31,6 +32,7 @@ const Services = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

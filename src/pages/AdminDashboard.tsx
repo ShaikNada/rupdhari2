@@ -58,7 +58,7 @@ const AdminDashboard = () => {
 
   // Wood and cushioning options
   const woodOptions = ['teak', 'walnut', 'pine', 'mango', 'plywood'];
-  const cushionOptions = ['polyester', 'foam', 'down', 'cotton', 'shell', 'mango'];
+  const cushionOptions = ['polyester', 'foam', 'down', 'cotton', 'shell', 'none'];
 
   // Generate unique product number
   const generateProductNumber = async () => {

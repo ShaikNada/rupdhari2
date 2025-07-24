@@ -1,4 +1,5 @@
 import Navigation from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 
 const Story = () => {
   return (
@@ -14,6 +15,7 @@ const Story = () => {
           </p>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

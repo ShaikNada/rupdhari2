@@ -3,6 +3,7 @@ import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCategoryNames } from "@/data/furnitureData";
 import { useProducts } from "@/hooks/useProducts";
+import { Footer } from "@/components/Footer";
 
 const CategoryPage = () => {
   const { categoryId } = useParams();
@@ -95,6 +96,7 @@ const CategoryPage = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

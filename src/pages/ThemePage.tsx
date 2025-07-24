@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
 import { getThemeNames, getCategoryNames } from "@/data/furnitureData";
 import { useProducts } from "@/hooks/useProducts";
+import { Footer } from "@/components/Footer";
 
 const ThemePage = () => {
   const { themeId } = useParams();
@@ -125,6 +126,7 @@ const ThemePage = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

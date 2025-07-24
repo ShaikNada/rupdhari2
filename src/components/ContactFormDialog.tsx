@@ -107,7 +107,7 @@ export const ContactFormDialog = ({ isOpen, onClose, productName, productCode, s
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {step === 1 ? "Product Details" : "Contact Information"}

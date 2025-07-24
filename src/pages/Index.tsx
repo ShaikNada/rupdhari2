@@ -3,6 +3,7 @@ import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import ThemesSection from "@/components/ThemesSection";
 import CategoriesSection from "@/components/CategoriesSection";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -44,6 +45,8 @@ const Index = () => {
       <div id="categories-section">
         <CategoriesSection />
       </div>
+      
+      <Footer />
     </div>
   );
 };
