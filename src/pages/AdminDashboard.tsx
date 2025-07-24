@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +21,19 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('post');
   const [loading, setLoading] = useState(false);
   const { products, refetch } = useProducts();
+  const [editingProduct, setEditingProduct] = useState<{
+    id: string;
+    name: string;
+    price: string;
+    product_number: string;
+    theme: string;
+    category: string;
+    image_url: string;
+    description: string;
+    wood_type: string;
+    cushion_type: string;
+    is_main_variant: boolean;
+  } | null>(null);
 
   // Combined form state for complete product creation
   const [productData, setProductData] = useState({
@@ -50,8 +62,10 @@ const AdminDashboard = () => {
     view4: { file: null as File | null, preview: '' }
   });
 
-  // Variation images
-  const [variationImages, setVariationImages] = useState<{[key: string]: {file: File | null, preview: string}}>({});
+  const [variationData, setVariationData] = useState<{[key: string]: {file: File | null, preview: string, price: string}}>({});
+
+  const [selectedWood, setSelectedWood] = useState<string>('');
+  const [selectedCushion, setSelectedCushion] = useState<string>('');
 
   const themes = getThemeNames();
   const categories = getCategoryNames();
@@ -92,8 +106,8 @@ const AdminDashboard = () => {
     });
   };
 
-  // Generate variation combinations
-  const generateVariationCombinations = () => {
+  // Generate variation combinations - memoized to prevent recalculation
+  const generateVariationCombinations = useCallback(() => {
     const combinations: Array<{wood: string, cushion: string, key: string}> = [];
     woodOptions.forEach(wood => {
       cushionOptions.forEach(cushion => {
@@ -105,22 +119,60 @@ const AdminDashboard = () => {
       });
     });
     return combinations;
-  };
+  }, [woodOptions, cushionOptions]);
 
-  // Handle main image upload
+  // Auto-fill main variety on main image upload - optimized
   const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setMainImageFile(file);
+      
+      // Use a more efficient way to read the file
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setMainImagePreview(result);
         setProductData(prev => ({...prev, image_url: result}));
+        
+        // Only update variation data if wood and cushion are selected
+        if (selectedWood && selectedCushion) {
+          const mainKey = `${selectedWood}_${selectedCushion}`;
+          setVariationData(prev => ({
+            ...prev,
+            [mainKey]: {
+              file,
+              preview: result,
+              price: productData.price || prev[mainKey]?.price || ''
+            }
+          }));
+        }
       };
       reader.readAsDataURL(file);
     }
   };
+
+  // Optimized update for wood/cushion selection changes
+  // Only runs when both selections are made and there's an image
+  useEffect(() => {
+    // Skip effect if any required data is missing
+    if (!selectedWood || !selectedCushion || !mainImageFile || !mainImagePreview) {
+      return;
+    }
+    
+    // Update the variation data without showing a toast
+    const mainKey = `${selectedWood}_${selectedCushion}`;
+    setVariationData(prev => ({
+      ...prev,
+      [mainKey]: {
+        file: mainImageFile,
+        preview: mainImagePreview,
+        price: productData.price || prev[mainKey]?.price || ''
+      }
+    }));
+    
+    // Only show toast on initial load or when explicitly needed
+    // This reduces unnecessary notifications
+  }, [selectedWood, selectedCushion, mainImageFile, mainImagePreview]);
 
   // Handle view images
   const handleViewImageChange = (viewNumber: 'view1' | 'view2' | 'view3' | 'view4', e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,136 +201,123 @@ const AdminDashboard = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
-        console.log(`=== VARIATION IMAGE UPLOAD DEBUG ===`);
-        console.log(`Variation key: ${variationKey}`);
-        console.log(`Image preview set for ${variationKey}:`, result.length > 0 ? 'SUCCESS' : 'FAILED');
-        
-        setVariationImages(prev => ({
+        setVariationData(prev => ({
           ...prev,
-          [variationKey]: { file, preview: result }
+          [variationKey]: { ...prev[variationKey], file, preview: result, price: prev[variationKey]?.price || '' }
         }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Submit complete product with all variations
-  const handleCompleteProductSubmit = async (e: React.FormEvent) => {
+  // Submit complete product with all variations - optimized
+  const handleCompleteProductSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log('=== PRODUCT SUBMISSION STARTING ===');
-      console.log('Variation images:', Object.keys(variationImages).length);
+      // Save main product
+      const { name, product_number, theme, category, image_url, description } = productData;
       
-      // Validate required fields
-      if (!productData.name || !productData.price || !productData.product_number || 
-          !productData.theme || !productData.category || !productData.image_url) {
-        toast({
-          title: "Missing Required Fields",
-          description: "Please fill in all required fields and upload a main image.",
-          variant: "destructive",
-        });
-        return;
+      // Validate required fields first to avoid unnecessary processing
+      if (!name || !product_number || !theme || !category || !selectedWood || !selectedCushion) {
+        throw new Error("Please fill in all required fields");
       }
+      
+      const mainKey = `${selectedWood}_${selectedCushion}`;
+      const mainPrice = variationData[mainKey]?.price || productData.price;
 
-      // Delete any existing products with the same product number (both main and variations)
-      console.log('Deleting existing products with same product number...');
-      const { error: deleteError } = await supabase
-        .from('products')
-        .delete()
-        .eq('product_number', productData.product_number);
-
-      if (deleteError) {
-        console.error('Delete error:', deleteError);
-        // Continue anyway, it might not exist
-      }
-
-      // Create main product first
-      console.log('Creating main product...');
-      const mainProductData = {
-        name: productData.name,
-        price: parseFloat(productData.price),
-        product_number: productData.product_number,
-        theme: productData.theme,
-        category: productData.category,
-        image_url: productData.image_url,
-        description: productData.description || '',
-        view1_image_url: productData.view1_image_url || null,
-        view2_image_url: productData.view2_image_url || null,
-        view3_image_url: productData.view3_image_url || null,
-        view4_image_url: productData.view4_image_url || null,
-        wood_type: null,
-        cushion_type: null,
-        customized_image_url: null,
-        is_main_variant: true
+      // Create main product object with proper typing
+      const mainProductData: {
+        id?: string;
+        name: string;
+        product_number: string;
+        theme: string;
+        category: string;
+        image_url: string;
+        description: string;
+        wood_type: string;
+        cushion_type: string;
+        price: number;
+        is_main_variant: boolean;
+        view1_image_url: string;
+        view2_image_url: string;
+        view3_image_url: string;
+        view4_image_url: string;
+      } = {
+        name,
+        product_number,
+        theme,
+        category,
+        image_url,
+        description,
+        wood_type: selectedWood,
+        cushion_type: selectedCushion,
+        price: parseFloat(mainPrice) || 0,
+        is_main_variant: true,
+        view1_image_url: productData.view1_image_url,
+        view2_image_url: productData.view2_image_url,
+        view3_image_url: productData.view3_image_url,
+        view4_image_url: productData.view4_image_url,
       };
 
-      const { error: mainError } = await supabase
+      // If editing an existing product, include the ID
+      if (editingProduct?.id) {
+        mainProductData.id = editingProduct.id;
+      }
+
+      // Save main product
+      const { data: mainProduct, error: mainError } = await supabase
         .from('products')
-        .insert([mainProductData]);
+        .upsert([mainProductData])
+        .select()
+        .single();
 
-      if (mainError) {
-        console.error('Main product creation error:', mainError);
-        throw mainError;
-      }
+      if (mainError) throw mainError;
 
-      console.log('✅ Main product created successfully');
-
-      // Create all variations in smaller batches to avoid conflicts
-      const variations = generateVariationCombinations();
-      console.log(`Creating ${variations.length} variations...`);
+      // Get combinations only once
+      const combinations = generateVariationCombinations();
       
-      const variationsToInsert = variations.map(variation => {
-        const variationImage = variationImages[variation.key];
-        const customizedImageUrl = variationImage?.preview || null;
-        
-        console.log(`Variation ${variation.key}: ${customizedImageUrl ? 'HAS IMAGE' : 'NO IMAGE'}`);
-        
-        return {
-          name: productData.name,
-          price: parseFloat(productData.price),
-          product_number: productData.product_number,
-          theme: productData.theme,
-          category: productData.category,
-          image_url: productData.image_url, // Keep main image as fallback
-          description: productData.description || '',
-          view1_image_url: productData.view1_image_url || null,
-          view2_image_url: productData.view2_image_url || null,
-          view3_image_url: productData.view3_image_url || null,
-          view4_image_url: productData.view4_image_url || null,
-          wood_type: variation.wood,
-          cushion_type: variation.cushion,
-          customized_image_url: customizedImageUrl,
-          is_main_variant: false
-        };
-      });
+      // Create variations array more efficiently
+      const variations = combinations
+        .filter(({ key }) => key !== mainKey)
+        .map(({ wood, cushion, key }) => {
+          const variationItem = {
+            name,
+            product_number,
+            theme,
+            category,
+            image_url: '', // Keep empty for variations
+            customized_image_url: variationData[key]?.preview || '', // Save to customized_image_url instead
+            description,
+            wood_type: wood,
+            cushion_type: cushion,
+            price: parseFloat(variationData[key]?.price) || 0,
+            is_main_variant: false,
+          };
 
-      console.log('Variations with images:', variationsToInsert.filter(v => v.customized_image_url).length);
+          return variationItem;
+        });
 
-      // Insert variations in batches to avoid timeout
-      const batchSize = 10;
-      for (let i = 0; i < variationsToInsert.length; i += batchSize) {
-        const batch = variationsToInsert.slice(i, i + batchSize);
-        console.log(`Inserting batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(variationsToInsert.length/batchSize)}`);
-        
-        const { error: batchError } = await supabase
+      // Only make the API call if there are variations to save
+      if (variations.length) {
+        const { error: varError } = await supabase
           .from('products')
-          .insert(batch);
+          .upsert(variations);
 
-        if (batchError) {
-          console.error('Batch insert error:', batchError);
-          throw batchError;
-        }
+        if (varError) throw varError;
       }
-
-      console.log('✅ All variations created successfully');
 
       toast({
-        title: "Product Created Successfully",
-        description: `Created main product with ${variationsToInsert.length} variations (${variationsToInsert.filter(v => v.customized_image_url).length} with custom images)`,
+        title: editingProduct ? "Product Updated" : "Product Created",
+        description: editingProduct
+          ? "Product and variations updated successfully."
+          : "Product and variations saved successfully.",
       });
-
+      
+      // Reset editing state
+      setEditingProduct(null);
+      
       // Reset form
       setProductData({
         name: '',
@@ -293,7 +332,8 @@ const AdminDashboard = () => {
         view3_image_url: '',
         view4_image_url: '',
       });
-      setMainImageFile(null);
+      setSelectedWood('');
+      setSelectedCushion('');
       setMainImagePreview('');
       setViewImages({
         view1: { file: null, preview: '' },
@@ -301,20 +341,19 @@ const AdminDashboard = () => {
         view3: { file: null, preview: '' },
         view4: { file: null, preview: '' }
       });
-      setVariationImages({});
-      await refetch();
-
-    } catch (error: any) {
-      console.error('Product creation error:', error);
+      setVariationData({});
+      
+      refetch();
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create product",
+        description: error instanceof Error ? error.message : "Failed to save product.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [productData, selectedWood, selectedCushion, variationData, generateVariationCombinations, toast, refetch, editingProduct]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
@@ -353,6 +392,14 @@ const AdminDashboard = () => {
                   <Plus className="w-4 h-4 mr-2" />
                   Create Product
                 </Button>
+                <Button
+                  variant={activeTab === 'edit' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('edit')}
+                  className="px-6"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Edit Products
+                </Button>
               </nav>
             </div>
             <Button onClick={signOut} variant="outline" className="px-6">
@@ -380,6 +427,116 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         )}
+        
+        {activeTab === 'edit' && (
+          <Card className="border-0 shadow-xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <Settings className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl">Edit Products</CardTitle>
+                  <p className="text-muted-foreground mt-1">Modify existing product details</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold">Existing Products</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {products.map(product => (
+                    <Card key={product.id} className="overflow-hidden">
+                      <div className="aspect-square bg-muted">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <span className="text-muted-foreground">No image</span>
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium truncate">{product.name}</h4>
+                        <p className="text-sm text-muted-foreground">{product.product_number}</p>
+                        <div className="flex justify-between items-center mt-2">
+                          <Badge variant="outline">{product.category}</Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Find the full product data from supabase
+                              const loadProductForEdit = async () => {
+                                try {
+                                  const { data, error } = await supabase
+                                    .from('products')
+                                    .select('*')
+                                    .eq('id', product.id)
+                                    .single();
+                                    
+                                  if (error) throw error;
+                                  if (data) {
+                                    // Convert the product data to the form format
+                                    setEditingProduct({
+                                      ...data,
+                                      price: data.price?.toString() || '',
+                                    });
+                                    
+                                    // Set form data
+                                    setProductData({
+                                      name: data.name || '',
+                                      price: data.price?.toString() || '',
+                                      product_number: data.product_number || '',
+                                      theme: data.theme || '',
+                                      category: data.category || '',
+                                      image_url: data.image_url || '',
+                                      description: data.description || '',
+                                      view1_image_url: data.view1_image_url || '',
+                                      view2_image_url: data.view2_image_url || '',
+                                      view3_image_url: data.view3_image_url || '',
+                                      view4_image_url: data.view4_image_url || '',
+                                    });
+                                    
+                                    // Set wood and cushion types
+                                    setSelectedWood(data.wood_type || '');
+                                    setSelectedCushion(data.cushion_type || '');
+                                    
+                                    // Set main image preview if available
+                                    if (data.image_url) {
+                                      setMainImagePreview(data.image_url);
+                                    }
+                                    
+                                    // Switch to post tab for editing
+                                    setActiveTab('post');
+                                  }
+                                } catch (error) {
+                                  console.error("Error loading product for edit:", error);
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to load product details for editing.",
+                                    variant: "destructive",
+                                  });
+                                }
+                              };
+                              
+                              loadProductForEdit();
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {activeTab === 'post' && (
           <Card className="border-0 shadow-xl overflow-hidden">
@@ -389,8 +546,15 @@ const AdminDashboard = () => {
                   <Grid className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">Create Complete Product</CardTitle>
-                  <p className="text-muted-foreground mt-1">Create product with all variations in one go</p>
+                  <CardTitle className="text-2xl">
+                    {editingProduct ? "Edit Product" : "Create Complete Product"}
+                  </CardTitle>
+                  <p className="text-muted-foreground mt-1">
+                    {editingProduct
+                      ? `Editing ${editingProduct.name} (${editingProduct.product_number})`
+                      : "Create product with all variations in one go"
+                    }
+                  </p>
                 </div>
               </div>
             </CardHeader>
@@ -402,33 +566,77 @@ const AdminDashboard = () => {
                   
                   <div className="space-y-4">
                     <Label className="text-base font-medium">Main Product Image</Label>
-                    <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleMainImageChange}
-                        className="hidden"
-                        id="main-image-upload"
-                        required
-                      />
-                      <Label htmlFor="main-image-upload" className="cursor-pointer">
-                        <div className="space-y-3">
-                          {mainImagePreview ? (
-                            <img 
-                              src={mainImagePreview} 
-                              alt="Preview" 
-                              className="h-32 w-32 object-cover rounded-lg mx-auto shadow-lg"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                              <Upload className="w-8 h-8 text-primary" />
-                            </div>
-                          )}
-                          <p className="text-sm text-muted-foreground">
-                            {mainImagePreview ? 'Click to change image' : 'Upload main product image'}
-                          </p>
+                    <div className="space-y-4">
+                      <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleMainImageChange}
+                          className="hidden"
+                          id="main-image-upload"
+                          required
+                        />
+                        <Label htmlFor="main-image-upload" className="cursor-pointer">
+                          <div className="space-y-3">
+                            {mainImagePreview ? (
+                              <img
+                                src={mainImagePreview}
+                                alt="Preview"
+                                className="h-32 w-32 object-cover rounded-lg mx-auto shadow-lg"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                                <Upload className="w-8 h-8 text-primary" />
+                              </div>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                              {mainImagePreview ? 'Click to change image' : 'Upload main product image'}
+                            </p>
+                          </div>
+                        </Label>
+                      </div>
+                      
+                      {/* Wood and Cushion Selection for Main Image */}
+                      <div className="space-y-3 border border-border/50 rounded-lg p-4 bg-background/50">
+                        <h4 className="text-sm font-medium text-center">Select Wood & Cushion Type for Main Image</h4>
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground text-center">Wood Type</p>
+                          <div className="flex justify-center gap-2">
+                            {woodOptions.map(wood => (
+                              <button
+                                key={wood}
+                                type="button"
+                                className={`border p-1 rounded-md transition-all ${selectedWood === wood ? 'border-primary ring-1 ring-primary/30 shadow-sm' : 'border-border/50 hover:border-primary/50'}`}
+                                onClick={() => setSelectedWood(wood)}
+                                title={wood.charAt(0).toUpperCase() + wood.slice(1)}
+                              >
+                                <img src={`/assets/wood/${wood}.png`} alt={wood} className="w-8 h-8 object-cover rounded" />
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </Label>
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground text-center">Cushion Type</p>
+                          <div className="flex justify-center gap-2">
+                            {cushionOptions.map(cushion => (
+                              <button
+                                key={cushion}
+                                type="button"
+                                className={`border p-1 rounded-md transition-all ${selectedCushion === cushion ? 'border-primary ring-1 ring-primary/30 shadow-sm' : 'border-border/50 hover:border-primary/50'}`}
+                                onClick={() => setSelectedCushion(cushion)}
+                                title={cushion.charAt(0).toUpperCase() + cushion.slice(1)}
+                              >
+                                <img src={`/assets/cushion/${cushion}.png`} alt={cushion} className="w-8 h-8 object-cover rounded" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                          Selected: {selectedWood && selectedCushion ?
+                            <span className="font-medium text-foreground">{selectedWood.charAt(0).toUpperCase() + selectedWood.slice(1)} wood with {selectedCushion.charAt(0).toUpperCase() + selectedCushion.slice(1)} cushion</span> :
+                            "Please select both wood and cushion type"}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -596,9 +804,9 @@ const AdminDashboard = () => {
                                     id={`variation-${variationKey}`}
                                   />
                                   <Label htmlFor={`variation-${variationKey}`} className="cursor-pointer h-full flex items-center justify-center">
-                                    {variationImages[variationKey]?.preview ? (
+                                    {variationData[variationKey]?.preview ? (
                                       <img 
-                                        src={variationImages[variationKey].preview} 
+                                        src={variationData[variationKey].preview} 
                                         alt={`${wood} with ${cushion}`} 
                                         className="w-full h-full object-cover"
                                       />
@@ -609,6 +817,16 @@ const AdminDashboard = () => {
                                     )}
                                   </Label>
                                 </div>
+                                <Input
+                                  type="number"
+                                  placeholder="Price"
+                                  value={variationData[variationKey]?.price || ''}
+                                  onChange={e => setVariationData(prev => ({
+                                    ...prev,
+                                    [variationKey]: { ...prev[variationKey], price: e.target.value, file: prev[variationKey]?.file || null, preview: prev[variationKey]?.preview || '' }
+                                  }))}
+                                  className="w-full mt-1"
+                                />
                                 <p className="text-xs text-center text-muted-foreground capitalize">
                                   {wood} + {cushion}
                                 </p>
@@ -621,9 +839,60 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
+
+
+                {editingProduct && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 text-base mb-4"
+                    onClick={() => {
+                      // Reset form and editing state
+                      setEditingProduct(null);
+                      setProductData({
+                        name: '',
+                        price: '',
+                        product_number: '',
+                        theme: '',
+                        category: '',
+                        image_url: '',
+                        description: '',
+                        view1_image_url: '',
+                        view2_image_url: '',
+                        view3_image_url: '',
+                        view4_image_url: '',
+                      });
+                      setSelectedWood('');
+                      setSelectedCushion('');
+                      setMainImagePreview('');
+                      setViewImages({
+                        view1: { file: null, preview: '' },
+                        view2: { file: null, preview: '' },
+                        view3: { file: null, preview: '' },
+                        view4: { file: null, preview: '' }
+                      });
+                      setVariationData({});
+                      
+                      // Switch back to edit tab
+                      setActiveTab('edit');
+                    }}
+                  >
+                    Cancel Editing
+                  </Button>
+                )}
+
                 <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
-                  <Plus className="w-5 h-5 mr-2" />
-                  {loading ? 'Creating Complete Product...' : 'Create Complete Product with All Variations'}
+                  {editingProduct ? (
+                    <>
+                      <Settings className="w-5 h-5 mr-2" />
+                      {loading ? 'Updating Product...' : 'Update Product with All Variations'}
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5 mr-2" />
+                      {loading ? 'Creating Complete Product...' : 'Create Complete Product with All Variations'}
+                    </>
+                  )}
                 </Button>
               </form>
             </CardContent>
