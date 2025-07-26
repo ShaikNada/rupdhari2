@@ -1,18 +1,200 @@
 import Navigation from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { useState, useEffect } from "react";
+
+const socialLinks = [
+  {
+    href: "#",
+    label: "Twitter",
+    icon: (
+      <svg width="24" height="24" fill="currentColor" className="text-blue-400">
+        <path d="M22.46 5.924c-.793.352-1.645.59-2.54.698a4.48 4.48 0 0 0 1.963-2.475 8.94 8.94 0 0 1-2.828 1.082A4.48 4.48 0 0 0 11.07 9.03a12.72 12.72 0 0 1-9.24-4.685 4.48 4.48 0 0 0 1.39 5.98A4.44 4.44 0 0 1 2 9.097v.057a4.48 4.48 0 0 0 3.6 4.39 4.5 4.5 0 0 1-2.01.076 4.48 4.48 0 0 0 4.18 3.11A8.98 8.98 0 0 1 2 19.54a12.7 12.7 0 0 0 6.88 2.02c8.26 0 12.78-6.84 12.78-12.77 0-.19-.01-.38-.02-.57A9.1 9.1 0 0 0 24 4.59a8.93 8.93 0 0 1-2.54.7z"/>
+      </svg>
+    ),
+  },
+  {
+    href: "#",
+    label: "Facebook",
+    icon: (
+      <svg width="24" height="24" fill="currentColor" className="text-blue-600">
+        <path d="M22.675 0h-21.35C.595 0 0 .592 0 1.326v21.348C0 23.408.595 24 1.325 24h11.495v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.408 24 22.674V1.326C24 .592 23.406 0 22.675 0"/>
+      </svg>
+    ),
+  },
+  {
+    href: "#",
+    label: "Instagram",
+    icon: (
+      <svg width="24" height="24" fill="currentColor" className="text-pink-500">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.334 3.608 1.308.974.974 1.246 2.242 1.308 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.062 1.366-.334 2.633-1.308 3.608-.974.974-2.242 1.246-3.608 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.062-2.633-.334-3.608-1.308-.974-.974-1.246-2.242-1.308-3.608C2.175 15.647 2.163 15.267 2.163 12s.012-3.584.07-4.85c.062-1.366.334-2.633 1.308-3.608C4.515 2.567 5.783 2.295 7.15 2.233 8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.332.013 7.052.072 5.771.131 4.659.363 3.678 1.344 2.697 2.325 2.465 3.437 2.406 4.718 2.347 5.998 2.334 6.407 2.334 12c0 5.593.013 6.002.072 7.282.059 1.281.291 2.393 1.272 3.374.981.981 2.093 1.213 3.374 1.272 1.28.059 1.689.072 7.282.072s6.002-.013 7.282-.072c1.281-.059 2.393-.291 3.374-1.272.981-.981 1.213-2.093 1.272-3.374.059-1.28.072-1.689.072-7.282s-.013-6.002-.072-7.282c-.059-1.281-.291-2.393-1.272-3.374C21.393.363 20.281.131 19 .072 17.72.013 17.311 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zm0 10.162a3.999 3.999 0 1 1 0-7.998 3.999 3.999 0 0 1 0 7.998zm6.406-11.845a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"/>
+      </svg>
+    ),
+  },
+];
+
+const DEFAULT_CONTACT = {
+  address: "123 Main Street\nCity, Country 12345",
+  email: "info@yourcompany.com",
+  phone: "+1 (234) 567-890",
+  map: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.0193645913406!2d-122.41941518468137!3d37.7749297797597!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085808c7e2e8b1b%3A0x4a0b8e8e8e8e8e8e!2s123%20Main%20St%2C%20San%20Francisco%2C%20CA%2094105%2C%20USA!5e0!3m2!1sen!2s!4v1620000000000!5m2!1sen!2s"
+};
 
 const Contact = () => {
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [submitted, setSubmitted] = useState(false);
+  const [contact, setContact] = useState(DEFAULT_CONTACT);
+
+  // Fetch contact info from API
+  useEffect(() => {
+    fetch("/api/contact-info")
+      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then((data) => setContact(data))
+      .catch(() => setContact(DEFAULT_CONTACT));
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Send message to backend
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    setSubmitted(true);
+    setForm({ name: "", email: "", message: "" });
+    setTimeout(() => setSubmitted(false), 4000);
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-[#f8f6f3] to-[#f3f1ed]">
       <Navigation />
-      <div className="container mx-auto px-6 py-20">
-        <div className="text-center space-y-8">
-          <h1 className="text-4xl md:text-5xl font-serif text-rich-brown">
-            Contact Us
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Get in touch with our team for your next project.
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-3xl mx-auto text-center mb-16">
+          <h1 className="text-5xl font-bold font-serif text-rich-brown mb-4">Contact Us</h1>
+          <p className="text-lg text-muted-foreground">
+            We’d love to hear from you. Fill out the form or reach us through the details below.
           </p>
+        </div>
+        <div className="flex flex-col md:flex-row gap-10 md:gap-16 justify-center items-stretch">
+          {/* Info Panel */}
+          <div className="bg-white/80 rounded-2xl shadow-xl p-8 flex-1 flex flex-col justify-between max-w-md">
+            <div>
+              <h2 className="text-2xl font-semibold text-rich-brown mb-4">Our Office</h2>
+              <p className="text-muted-foreground mb-6" style={{ whiteSpace: "pre-line" }}>
+                {contact.address}
+              </p>
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-rich-brown mb-1">Email</h3>
+                <a href={`mailto:${contact.email}`} className="text-primary underline">
+                  {contact.email}
+                </a>
+              </div>
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-rich-brown mb-1">Phone</h3>
+                <a href={`tel:${contact.phone}`} className="text-primary underline">
+                  {contact.phone}
+                </a>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-rich-brown mb-2">Follow Us</h3>
+              <div className="flex space-x-4">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    aria-label={link.label}
+                    className="hover:scale-110 transition-transform"
+                  >
+                    {link.icon}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Contact Form */}
+          <div className="flex-1">
+            <form
+              onSubmit={handleSubmit}
+              className="bg-white rounded-2xl shadow-xl p-10 space-y-7"
+            >
+              <div>
+                <label htmlFor="name" className="block text-sm font-semibold text-rich-brown mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  value={form.name}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary bg-[#faf9f7]"
+                  placeholder="Your Name"
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-rich-brown mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  value={form.email}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary bg-[#faf9f7]"
+                  placeholder="you@email.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="message" className="block text-sm font-semibold text-rich-brown mb-2">
+                  Message
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  required
+                  rows={5}
+                  value={form.message}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary bg-[#faf9f7]"
+                  placeholder="How can we help you?"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-primary text-white py-3 rounded-lg font-semibold text-lg hover:bg-primary-dark transition"
+                disabled={submitted}
+              >
+                {submitted ? "Thank you for contacting us!" : "Send Message"}
+              </button>
+              {submitted && (
+                <div className="text-green-600 text-center mt-4 font-medium">
+                  Your message has been sent!
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+        {/* Google Maps */}
+        <div className="mt-16 max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-xl">
+          <iframe
+            title="Google Maps"
+            src={contact.map}
+            width="100%"
+            height="350"
+            style={{ border: 0 }}
+            allowFullScreen={true}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="w-full"
+          ></iframe>
         </div>
       </div>
       <Footer />

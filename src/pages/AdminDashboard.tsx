@@ -10,10 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getThemeNames, getCategoryNames } from '@/data/furnitureData';
-import { Upload, Package, Settings, Plus, Image, Sparkles, Grid, RefreshCw } from 'lucide-react';
+import { Upload, Package, Settings, Plus, Image, Sparkles, Grid, RefreshCw, Layers } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { OrdersTab } from "@/components/OrdersTab";
+import  ProjectsTab  from "@/components/ProjectsTab";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -377,6 +378,14 @@ const AdminDashboard = () => {
                   Orders
                 </Button>
                 <Button
+                  variant={activeTab === 'projects' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('projects')}
+                  className="px-6"
+                >
+                  <Layers className="w-4 h-4 mr-2" />
+                  Projects
+                </Button>
+                <Button
                   variant={activeTab === 'feedback' ? 'default' : 'ghost'}
                   onClick={() => setActiveTab('feedback')}
                   className="px-6"
@@ -412,6 +421,10 @@ const AdminDashboard = () => {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {activeTab === 'orders' && (
           <OrdersTab />
+        )}
+        
+        {activeTab === 'projects' && (
+          <ProjectsTab />
         )}
 
         {activeTab === 'feedback' && (
