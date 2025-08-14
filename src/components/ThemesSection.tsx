@@ -42,10 +42,10 @@ const ThemesSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-warm-beige">
+    <section className="pt-[25px] pb-[25px] mt-7 bg-warm-beige">
       <div className="container mx-auto px-6">
         <div className="text-left mb-8">
-          <p className="text-sm tracking-widest text-soft-brown uppercase mb-4">THEMES</p>
+          <p className="text-xl tracking-widest text-walnut font-brahmos uppercase mb-4">THEMES</p>
         </div>
 
         

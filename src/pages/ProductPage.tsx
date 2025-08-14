@@ -14,8 +14,8 @@ const ProductPage = () => {
   const { productName } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedWood, setSelectedWood] = useState("");
-  const [selectedCushioning, setSelectedCushioning] = useState("");
+  const [selectedWood, setSelectedWood] = useState<string | null>(null);
+  const [selectedCushioning, setSelectedCushioning] = useState<string | null>(null);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [displayImage, setDisplayImage] = useState("");
 
@@ -208,17 +208,9 @@ const ProductPage = () => {
   // Initialize wood and cushioning selection from main product
   useEffect(() => {
     if (products?.mainProduct) {
-      console.log('9. Setting initial wood and cushioning from main product');
-      console.log('9. Wood type:', products.mainProduct.wood_type);
-      console.log('9. Cushion type:', products.mainProduct.cushion_type);
-      
-      if (products.mainProduct.wood_type) {
-        setSelectedWood(products.mainProduct.wood_type);
-      }
-      
-      if (products.mainProduct.cushion_type) {
-        setSelectedCushioning(products.mainProduct.cushion_type);
-      }
+      // Only set on first load (not on every products change)
+      setSelectedWood(prev => prev ?? products.mainProduct.wood_type ?? "");
+      setSelectedCushioning(prev => prev ?? products.mainProduct.cushion_type ?? "");
     }
   }, [products]);
 
@@ -275,24 +267,45 @@ const ProductPage = () => {
   ) || mainProduct;
 
   // Product images - always using the main product images, not the variation images
-  const productImages = [
-    mainProduct.image_url,
-    mainProduct.view1_image_url,
-    mainProduct.view2_image_url,
-    mainProduct.view3_image_url,
-    mainProduct.view4_image_url,
-  ].filter(Boolean);
+  let galleryImages: string[] = [];
+  const isDefaultVariation = currentVariant.is_main_variant;
+  if (isDefaultVariation) {
+    // Always show main image first for default variation
+    galleryImages = [
+      mainProduct.image_url,
+      mainProduct.view1_image_url,
+      mainProduct.view2_image_url,
+      mainProduct.view3_image_url,
+      mainProduct.view4_image_url,
+    ].filter((img, idx, arr) => img && arr.indexOf(img) === idx);
+  } else {
+    // For other variations, show their image first if available
+    let variationImage = "";
+    if (currentVariant && currentVariant.customized_image_url && currentVariant.customized_image_url.trim() !== "") {
+      variationImage = currentVariant.customized_image_url;
+    } else if (currentVariant && currentVariant.image_url && currentVariant.image_url.trim() !== "") {
+      variationImage = currentVariant.image_url;
+    }
+    galleryImages = [
+      variationImage,
+      mainProduct.image_url,
+      mainProduct.view1_image_url,
+      mainProduct.view2_image_url,
+      mainProduct.view3_image_url,
+      mainProduct.view4_image_url,
+    ].filter((img, idx, arr) => img && arr.indexOf(img) === idx);
+  }
 
   const handleQuantityChange = (change: number) => {
     setQuantity(prev => Math.max(1, prev + change));
   };
 
   const nextImage = () => {
-    setSelectedImage(prev => (prev + 1) % productImages.length);
+  setSelectedImage(prev => (prev + 1) % galleryImages.length);
   };
 
   const prevImage = () => {
-    setSelectedImage(prev => (prev - 1 + productImages.length) % productImages.length);
+  setSelectedImage(prev => (prev - 1 + galleryImages.length) % galleryImages.length);
   };
 
   const woodOptions = [
@@ -352,19 +365,19 @@ const ProductPage = () => {
               {/* Main Image Display */}
               <div className="relative group">
                 <div className="aspect-[4/3] bg-card rounded-2xl overflow-hidden shadow-elegant">
-                  {productImages.length > 0 && (
+                  {galleryImages.length > 0 && (
                     <>
                       <Dialog>
                         <DialogTrigger className="w-full h-full">
                           <img 
-                            src={productImages[selectedImage]} 
+                            src={galleryImages[selectedImage]}
                             alt={mainProduct.name}
                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 cursor-zoom-in"
                           />
                         </DialogTrigger>
                         <DialogContent className="max-w-5xl p-2">
                           <img 
-                            src={productImages[selectedImage]} 
+                            src={galleryImages[selectedImage]}
                             alt={mainProduct.name}
                             className="w-full h-auto rounded-lg"
                           />
@@ -372,7 +385,7 @@ const ProductPage = () => {
                       </Dialog>
                       
                       {/* Navigation Arrows */}
-                      {productImages.length > 1 && (
+                      {galleryImages.length > 1 && (
                         <>
                           <button
                             onClick={prevImage}
@@ -393,9 +406,9 @@ const ProductPage = () => {
                 </div>
 
                 {/* Image Thumbnails */}
-                {productImages.length > 1 && (
+                {galleryImages.length > 1 && (
                   <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
-                    {productImages.map((image, index) => (
+                    {galleryImages.map((image, index) => (
                       <button
                         key={index}
                         onClick={() => setSelectedImage(index)}

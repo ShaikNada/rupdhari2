@@ -1,13 +1,10 @@
-// src/pages/Contact.tsx
-
 import Navigation from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client"; // Add this import
 
 const socialLinks = [
   {
-    href: "https://twitter.com",
+    href: "#",
     label: "Twitter",
     icon: (
       <svg width="24" height="24" fill="currentColor" className="text-blue-400">
@@ -16,7 +13,7 @@ const socialLinks = [
     ),
   },
   {
-    href: "https://facebook.com",
+    href: "#",
     label: "Facebook",
     icon: (
       <svg width="24" height="24" fill="currentColor" className="text-blue-600">
@@ -25,7 +22,7 @@ const socialLinks = [
     ),
   },
   {
-    href: "https://instagram.com",
+    href: "#",
     label: "Instagram",
     icon: (
       <svg width="24" height="24" fill="currentColor" className="text-pink-500">
@@ -42,13 +39,10 @@ const DEFAULT_CONTACT = {
   map: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.0193645913406!2d-122.41941518468137!3d37.7749297797597!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085808c7e2e8b1b%3A0x4a0b8e8e8e8e8e8e!2s123%20Main%20St%2C%20San%20Francisco%2C%20CA%2094105%2C%20USA!5e0!3m2!1sen!2s!4v1620000000000!5m2!1sen!2s"
 };
 
-export default function Contact() {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
-  const [contact, setContact] = useState(DEFAULT_CONTACT);
+const Contact = () => {
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [contact, setContact] = useState(DEFAULT_CONTACT);
 
   // Fetch contact info from API
   useEffect(() => {
@@ -59,44 +53,24 @@ export default function Contact() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setSuccess("");
-    setError("");
-
-    const { name, email, message } = formData;
-
-    // Send message to Supabase feedback table
-    const { error: supaError } = await supabase
-      .from("feedback")
-      .insert([
-        {
-          name,
-          email,
-          message,
-          is_read: false,
-          created_at: new Date().toISOString(),
-        }
-      ]);
-
-    if (supaError) {
-      setError("Failed to send message. Please try again.");
-      setLoading(false);
-      return;
-    }
+    // Send message to backend
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
     setSubmitted(true);
-    setFormData({ name: "", email: "", message: "" });
-    setSuccess("Message sent!");
+    setForm({ name: "", email: "", message: "" });
     setTimeout(() => setSubmitted(false), 4000);
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8f6f3] to-[#f3f1ed]">
+    <div className="min-h-screen" style={{ backgroundColor: 'chestnut' }}>
       <Navigation />
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-3xl mx-auto text-center mb-16">
@@ -105,11 +79,10 @@ export default function Contact() {
             We’d love to hear from you. Fill out the form or reach us through the details below.
           </p>
         </div>
-
-        <div className="flex flex-col md:flex-row gap-10 md:gap-16 justify-center items-stretch">
+        <div className="flex flex-col md:flex-row gap-10 md:gap-16 justify-center items-stretch ">
           {/* Info Panel */}
           <div className="bg-white/80 rounded-2xl shadow-xl p-8 flex-1 flex flex-col justify-between max-w-md border-2 border-walnut">
-            <div>
+            <div >
               <h2 className="text-2xl font-semibold text-rich-brown mb-4">Our Office</h2>
               <p className="text-muted-foreground mb-6" style={{ whiteSpace: "pre-line" }}>
                 {contact.address}
@@ -150,7 +123,7 @@ export default function Contact() {
               className="bg-white rounded-2xl shadow-xl p-10 space-y-7 border-2 border-walnut"
             >
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-rich-brown mb-2">
+                <label htmlFor="name" className="block text-sm font-semibold text-rich-brown mb-2 ">
                   Name
                 </label>
                 <input
@@ -158,9 +131,9 @@ export default function Contact() {
                   id="name"
                   name="name"
                   required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="border-2 border-walnut w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary bg-[#faf9f7]"
+                  value={form.name}
+                  
+                  className=" border-2 border-walnut w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary bg-[#faf9f7]"
                   placeholder="Your Name"
                 />
               </div>
@@ -173,8 +146,7 @@ export default function Contact() {
                   id="email"
                   name="email"
                   required
-                  value={formData.email}
-                  onChange={handleChange}
+                  value={form.email}
                   className="border-2 border-walnut w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary bg-[#faf9f7]"
                   placeholder="you@email.com"
                 />
@@ -188,8 +160,7 @@ export default function Contact() {
                   name="message"
                   required
                   rows={5}
-                  value={formData.message}
-                  onChange={handleChange}
+                  value={form.message}
                   className="border-2 border-walnut w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary bg-[#faf9f7]"
                   placeholder="How can we help you?"
                 />
@@ -197,24 +168,18 @@ export default function Contact() {
               <button
                 type="submit"
                 className="w-full bg-primary text-white py-3 rounded-lg font-semibold text-lg hover:bg-primary-dark transition"
-                disabled={loading}
+                disabled={submitted}
               >
-                {loading ? "Sending..." : submitted ? "Thank you for contacting us!" : "Send Message"}
+                {submitted ? "Thank you for contacting us!" : "Send Message"}
               </button>
-              {error && (
-                <div className="text-red-600 text-center mt-4 font-medium">
-                  {error}
-                </div>
-              )}
-              {success && (
+              {submitted && (
                 <div className="text-green-600 text-center mt-4 font-medium">
-                  {success}
+                  Your message has been sent!
                 </div>
               )}
             </form>
           </div>
         </div>
-
         {/* Google Maps */}
         <div className="border-2 border-walnut mt-16 max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-xl">
           <iframe
@@ -233,4 +198,6 @@ export default function Contact() {
       <Footer />
     </div>
   );
-}
+};
+
+export default Contact;

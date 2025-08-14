@@ -25,13 +25,10 @@ const CategoriesSection = () => {
   return (
     <section className="py-20 bg-gradient-subtle">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-serif text-rich-brown mb-4">
-            Categories
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore our comprehensive range of furniture categories
-          </p>
+        <div className="text-left mb-8">
+          <p className="text-xl tracking-widest font-brahmos text-walnut uppercase mb-4">CATEGORIES</p>
+          <p className="text-sm tracking-widest text-desert mb-4">Explore our comprehensive range of furniture catagories</p>
+          
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

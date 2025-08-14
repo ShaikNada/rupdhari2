@@ -75,6 +75,7 @@ const Services = () => {
       {/* Services Showcase Section */}
       <div className="py-16 bg-white/90">
         <div className="container mx-auto px-6">
+
           {/* Interior Design Section */}
           <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
             <div className="order-2 md:order-1">
@@ -96,12 +97,14 @@ const Services = () => {
               </div>
             </div>
             <div className="order-1 md:order-2">
-              <div className="relative">
-                <div className="aspect-square bg-akaroa rounded-lg overflow-hidden shadow-lg">
-                  <div className="absolute inset-0 bg-rhino/20"></div>
-                  <div className="h-full w-full flex items-center justify-center text-white">
-                    <span className="text-lg font-serif">Interior Image</span>
-                  </div>
+              <div className="relative flex justify-center p-8">
+                <div className="aspect-square w-80 h-80 bg-akaroa rounded-lg overflow-hidden shadow-lg group-hover:shadow-md mx-auto group cursor-pointer transition-all duration-500">
+                  <img
+                    src="/src/assets/2.jpg"
+                    alt="Interior"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-90"
+                  />
+                  {/* <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div> */}
                 </div>
                 <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-desert/20 rounded-lg -z-10"></div>
                 <div className="absolute -top-6 -right-6 w-32 h-32 bg-walnut/20 rounded-lg -z-10"></div>
@@ -112,12 +115,14 @@ const Services = () => {
           {/* Architecture Section */}
           <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
             <div>
-              <div className="relative">
-                <div className="aspect-square bg-akaroa rounded-lg overflow-hidden shadow-lg">
-                  <div className="absolute inset-0 bg-rhino/20"></div>
-                  <div className="h-full w-full flex items-center justify-center text-white">
-                    <span className="text-lg font-serif">Architecture Image</span>
-                  </div>
+              <div className="relative flex justify-center p-8">
+                <div className="aspect-square w-80 h-80 bg-akaroa rounded-lg overflow-hidden shadow-lg group-hover:shadow-md mx-auto group cursor-pointer transition-all duration-500">
+                  <img
+                    src="/src/assets/3.jpg"
+                    alt="Architecture"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-90"
+                  />
+                  {/* <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div> */}
                 </div>
                 <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-desert/20 rounded-lg -z-10"></div>
                 <div className="absolute -top-6 -left-6 w-32 h-32 bg-walnut/20 rounded-lg -z-10"></div>
@@ -164,18 +169,21 @@ const Services = () => {
               </div>
             </div>
             <div className="order-1 md:order-2">
-              <div className="relative">
-                <div className="aspect-square bg-akaroa rounded-lg overflow-hidden shadow-lg">
-                  <div className="absolute inset-0 bg-rhino/20"></div>
-                  <div className="h-full w-full flex items-center justify-center text-white">
-                    <span className="text-lg font-serif">Furnishings Image</span>
-                  </div>
+              <div className="relative flex justify-center p-8">
+                <div className="aspect-square w-80 h-80 bg-akaroa rounded-lg overflow-hidden shadow-lg group-hover:shadow-md mx-auto group cursor-pointer transition-all duration-500">
+                  <img
+                    src="/src/assets/1.jpg"
+                    alt="Furnishings"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-90"
+                  />
+                  {/* <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div> */}
                 </div>
                 <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-desert/20 rounded-lg -z-10"></div>
                 <div className="absolute -top-6 -right-6 w-32 h-32 bg-walnut/20 rounded-lg -z-10"></div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -247,8 +255,9 @@ const Services = () => {
                       ? "bg-walnut text-white hover:bg-walnut/90"
                       : "text-sandstone hover:text-walnut"
                   }
-                  onClick={() => setProjectStatus("Ongoing")}
-                >
+                  onClick={() => setProjectStatus("Ongoing")}   
+                  
+                >                                           
                   Ongoing
                 </Button>
               </div>
@@ -267,7 +276,6 @@ const Services = () => {
           </Tabs>
         </div>
       </div>
-
       <Footer />
     </div>
   );
