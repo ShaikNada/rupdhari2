@@ -21,7 +21,7 @@ const Navigation = () => {
           {/* Logo */}
           <div className="flex flex-col items-center space-y-1">
             <img 
-              src={logo}}
+              src={logo}
               alt="Rūpdhari Logo" 
               className="h-12 w-auto"
             />
