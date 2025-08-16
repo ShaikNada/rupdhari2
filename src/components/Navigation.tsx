@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-
+import logo from "@/assets/logo.png";
 const Navigation = () => {
   const location = useLocation();
   
@@ -21,8 +21,8 @@ const Navigation = () => {
           {/* Logo */}
           <div className="flex flex-col items-center space-y-1">
             <img 
-              src="/src/assets/logo.png" 
-              alt="Rūpadhari Logo" 
+              src={logo}}
+              alt="Rūpdhari Logo" 
               className="h-12 w-auto"
             />
             <div className="text-sm text-muted-foreground italic text-center">

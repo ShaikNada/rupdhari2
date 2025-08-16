@@ -6,6 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import ProjectCard from "@/components/ProjectCard";
 import { supabase } from "@/integrations/supabase/client";
+import one from "@/assets/1.jpg";
+import two from "@/assets/2.jpg";
+import three from "@/assets/3.jpg";
 
 type ProjectType = "All" | "Interior" | "Architecture";
 type ProjectStatus = "All" | "Completed" | "Ongoing";
@@ -100,7 +103,7 @@ const Services = () => {
               <div className="relative flex justify-center p-8">
                 <div className="aspect-square w-80 h-80 bg-akaroa rounded-lg overflow-hidden shadow-lg group-hover:shadow-md mx-auto group cursor-pointer transition-all duration-500">
                   <img
-                    src="/src/assets/2.jpg"
+                    src={two}
                     alt="Interior"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-90"
                   />
@@ -118,7 +121,7 @@ const Services = () => {
               <div className="relative flex justify-center p-8">
                 <div className="aspect-square w-80 h-80 bg-akaroa rounded-lg overflow-hidden shadow-lg group-hover:shadow-md mx-auto group cursor-pointer transition-all duration-500">
                   <img
-                    src="/src/assets/3.jpg"
+                    src={three}
                     alt="Architecture"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-90"
                   />
@@ -172,7 +175,7 @@ const Services = () => {
               <div className="relative flex justify-center p-8">
                 <div className="aspect-square w-80 h-80 bg-akaroa rounded-lg overflow-hidden shadow-lg group-hover:shadow-md mx-auto group cursor-pointer transition-all duration-500">
                   <img
-                    src="/src/assets/1.jpg"
+                    src={one}
                     alt="Furnishings"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-90"
                   />
