@@ -397,14 +397,23 @@ const ProjectsTab = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={{
-                    ...project,
-                    video_url: project.videos?.[0] ?? null,
-                    images: project.images || [],
-                  }}
-                />
+                <div key={project.id} className="relative group">
+                  <ProjectCard
+                    project={{
+                      ...project,
+                      video_url: project.videos?.[0] ?? null,
+                      images: project.images || [],
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 z-10"
+                    onClick={() => handleEdit(project)}
+                  >
+                    <Edit className="w-4 h-4 mr-1" /> Edit
+                  </Button>
+                </div>
               ))}
             </div>
           )}

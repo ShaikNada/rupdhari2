@@ -306,7 +306,14 @@ const Services = () => {
             className="block hover:opacity-95 transition-opacity"
             style={{ textDecoration: "none" }}
           >
-            <ProjectCard project={project} />
+            <ProjectCard
+              project={{
+                ...project,
+                thumbnail_url: (project as any).thumbnail_url || '',
+                video_url: project.videos?.[0] ?? null,
+                images: project.images || [],
+              }}
+            />
           </Link>
         ))}
       </div>

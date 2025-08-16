@@ -415,6 +415,16 @@ const AdminDashboard = () => {
                                   setSelectedWood(data.wood_type || '');
                                   setSelectedCushion(data.cushion_type || '');
                                   if (data.image_url) setMainImagePreview(data.image_url);
+                                  // Pre-fill variationData for main variant so its image/price always show
+                                  const mainKey = `${data.wood_type || ''}_${data.cushion_type || ''}`;
+                                  setVariationData(prev => ({
+                                    ...prev,
+                                    [mainKey]: {
+                                      file: null,
+                                      preview: data.customized_image_url || data.image_url || '',
+                                      price: data.price?.toString() || ''
+                                    }
+                                  }));
                                   setActiveTab('post');
                                 }
                               } catch (error) {
