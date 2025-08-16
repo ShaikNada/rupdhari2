@@ -14,6 +14,7 @@ const ProductPage = () => {
   const { productName } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  // ...existing code...
   const [selectedWood, setSelectedWood] = useState<string | null>(null);
   const [selectedCushioning, setSelectedCushioning] = useState<string | null>(null);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
@@ -58,18 +59,24 @@ const ProductPage = () => {
 
   useEffect(() => {
     if (!products || !products.variations || !products.mainProduct) return;
-    const exactMatch = products.variations.find(v =>
-      v.wood_type === selectedWood &&
-      v.cushion_type === selectedCushioning &&
-      (v.customized_image_url?.trim() || v.image_url?.trim())
-    );
-    if (exactMatch) {
-      setDisplayImage(
-        exactMatch.customized_image_url?.trim() || exactMatch.image_url || ''
-      );
-    } else {
+    // Only show main image for its own combination
+    if (
+      selectedWood === products.mainProduct.wood_type &&
+      selectedCushioning === products.mainProduct.cushion_type
+    ) {
       setDisplayImage(products.mainProduct.image_url || '');
+      return;
     }
+    // Uploaded image for this combination
+    const variation = products.variations.find(v => {
+      return v.wood_type === selectedWood && v.cushion_type === selectedCushioning && (v.customized_image_url || v.image_url);
+    });
+    if (variation && (variation.customized_image_url || variation.image_url)) {
+      setDisplayImage(variation.customized_image_url || variation.image_url);
+      return;
+    }
+    // For all other combinations, show placeholder (never main image)
+    setDisplayImage('');
   }, [selectedWood, selectedCushioning, products]);
 
   useEffect(() => {
@@ -123,12 +130,14 @@ const ProductPage = () => {
   ) || mainProduct;
 
   let galleryImages: string[] = [];
-  if (currentVariant.customized_image_url?.trim()) {
-    galleryImages.push(currentVariant.customized_image_url);
-  }
-  [mainProduct.image_url, mainProduct.view1_image_url, mainProduct.view2_image_url, mainProduct.view3_image_url, mainProduct.view4_image_url]
-    .filter(img => img && !galleryImages.includes(img))
-    .forEach(img => galleryImages.push(img));
+  // Always use the admin-uploaded main image and views for the gallery
+  galleryImages = [
+    mainProduct.image_url,
+    mainProduct.view1_image_url,
+    mainProduct.view2_image_url,
+    mainProduct.view3_image_url,
+    mainProduct.view4_image_url
+  ].filter(Boolean);
 
   const handleQuantityChange = (change: number) => {
     setQuantity(prev => Math.max(1, prev + change));
@@ -164,7 +173,7 @@ const ProductPage = () => {
               <div className="relative group">
                 <div className="aspect-[4/3] max-w-[85%] mx-auto bg-card rounded-xl overflow-hidden shadow-elegant">
                   {galleryImages.length > 0 && (
-                    <>
+                    <div className="relative w-full h-full">
                       <Dialog>
                         <DialogTrigger className="w-full h-full">
                           <img
@@ -185,19 +194,21 @@ const ProductPage = () => {
                         <>
                           <button
                             onClick={prevImage}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-80 hover:opacity-100 shadow-lg"
+                            aria-label="Previous image"
                           >
-                            <ChevronLeft className="w-5 h-5" />
+                            <ChevronLeft className="w-6 h-6" />
                           </button>
                           <button
                             onClick={nextImage}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-80 hover:opacity-100 shadow-lg"
+                            aria-label="Next image"
                           >
-                            <ChevronRight className="w-5 h-5" />
+                            <ChevronRight className="w-6 h-6" />
                           </button>
                         </>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
                 {galleryImages.length > 1 && (
@@ -224,15 +235,15 @@ const ProductPage = () => {
               <h1 className="text-4xl lg:text-5xl font-serif text-foreground leading-tight">{mainProduct.name}</h1>
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl font-bold text-primary">
-                  ₹{safeParsePrice(currentVariant.price).toLocaleString()}
+                  ₹{safeParsePrice(mainProduct.price).toLocaleString()}
                 </span>
                 <span className="text-lg text-muted-foreground line-through">
-                  ₹{(safeParsePrice(currentVariant.price) * 1.2).toLocaleString()}
+                  ₹{(safeParsePrice(mainProduct.price) * 1.2).toLocaleString()}
                 </span>
                 <Badge className="bg-green-100 text-green-800 border-green-200">Save 20%</Badge>
               </div>
               {mainProduct.description && (
-                <p className="text-muted-foreground leading-relaxed text-lg">{mainProduct.description}</p>
+                <p className="text-muted-foreground leading-relaxed text-lg" dangerouslySetInnerHTML={{ __html: mainProduct.description.replace(/\^/g, '<br />') }} />
               )}
             </div>
           </div>
@@ -243,11 +254,22 @@ const ProductPage = () => {
                 <div className="lg:col-span-5">
                   <div className="sticky top-8">
                     <div className="aspect-square bg-muted/30 rounded-2xl overflow-hidden shadow-elegant">
-                      <img
-                        src={displayImage || products?.mainProduct?.image_url || ''}
-                        alt="Customized view"
-                        className="w-full h-full object-cover transition-all duration-500"
-                      />
+                      {displayImage ? (
+                        <img
+                          src={displayImage}
+                          alt="Customized view"
+                          className="w-full h-full object-cover transition-all duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-muted/50 to-muted/20">
+                          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                            <span className="text-2xl">📷</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-medium">
+                            This combination will be available soon
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-4 p-4 bg-background/50 rounded-xl">
                       <div className="flex justify-between">

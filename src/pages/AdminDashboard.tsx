@@ -412,19 +412,40 @@ const AdminDashboard = () => {
                                     view2_image_url: data.view2_image_url || '', view3_image_url: data.view3_image_url || '',
                                     view4_image_url: data.view4_image_url || '',
                                   });
+                                  setViewImages({
+                                    view1: { file: null, preview: data.view1_image_url || '' },
+                                    view2: { file: null, preview: data.view2_image_url || '' },
+                                    view3: { file: null, preview: data.view3_image_url || '' },
+                                    view4: { file: null, preview: data.view4_image_url || '' }
+                                  });
                                   setSelectedWood(data.wood_type || '');
                                   setSelectedCushion(data.cushion_type || '');
                                   if (data.image_url) setMainImagePreview(data.image_url);
-                                  // Pre-fill variationData for main variant so its image/price always show
+                                  // Load all variations for this product_number
+                                  const { data: variations, error: varError } = await supabase
+                                    .from('products')
+                                    .select('*')
+                                    .eq('product_number', data.product_number)
+                                    .eq('is_main_variant', false);
+                                  const newVariationData = {};
+                                  if (variations) {
+                                    variations.forEach(v => {
+                                      const key = `${v.wood_type}_${v.cushion_type}`;
+                                      newVariationData[key] = {
+                                        file: null,
+                                        preview: v.customized_image_url || '',
+                                        price: v.price?.toString() || ''
+                                      };
+                                    });
+                                  }
+                                  // Also set main image for mainKey
                                   const mainKey = `${data.wood_type || ''}_${data.cushion_type || ''}`;
-                                  setVariationData(prev => ({
-                                    ...prev,
-                                    [mainKey]: {
-                                      file: null,
-                                      preview: data.customized_image_url || data.image_url || '',
-                                      price: data.price?.toString() || ''
-                                    }
-                                  }));
+                                  newVariationData[mainKey] = {
+                                    file: null,
+                                    preview: data.image_url || '',
+                                    price: data.price?.toString() || ''
+                                  };
+                                  setVariationData(newVariationData);
                                   setActiveTab('post');
                                 }
                               } catch (error) {

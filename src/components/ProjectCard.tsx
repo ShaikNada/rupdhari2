@@ -38,28 +38,25 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Card className="overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-elegant">
-          <div className="relative h-48 bg-muted">
-            {project.thumbnail_url ? (
-              <img
-                src={project.thumbnail_url}
-                alt={project.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-akaroa text-rhino">
-                {project.type}
-              </div>
-            )}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-rhino/80 to-transparent p-2">
-              <span className={`text-xs font-medium text-white px-2 py-1 rounded-full ${
-                isCompleted ? 'bg-desert' : 'bg-sandstone'
-              }`}>{project.status}</span>
+        <Card>
+          <CardContent>
+            <div className="relative h-48 bg-muted">
+              {project.thumbnail_url ? (
+                <img
+                  src={project.thumbnail_url}
+                  alt={project.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-akaroa text-rhino">
+                  {project.type}
+                </div>
+              )}
             </div>
-          </div>
-          <CardContent className="p-4">
-            <h3 className="text-lg font-serif text-rhino">{project.name}</h3>
-            <p className="text-sm text-sandstone mt-1">{project.type}</p>
+            <div className="p-4">
+              <h3 className="text-lg font-serif text-rhino font-bold truncate">{project.name}</h3>
+              <p className="text-sandstone text-sm truncate">{project.description || 'No description available.'}</p>
+            </div>
           </CardContent>
         </Card>
       </DialogTrigger>
@@ -76,7 +73,6 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-
                   {project.images!.length > 1 && (
                     <div className="absolute inset-0 flex items-center justify-between px-2">
                       <Button
@@ -99,7 +95,6 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                       </Button>
                     </div>
                   )}
-
                   <div className="absolute bottom-4 right-4">
                     <span className="text-xs bg-white/80 px-2 py-1 rounded-full">
                       {currentImageIndex + 1} / {project.images!.length}
@@ -117,27 +112,28 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
               )}
             </>
           ) : (
-            <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-              <div className="text-center p-6">
-                <Clock className="h-12 w-12 mx-auto mb-4 text-sandstone opacity-50" />
-                <h3 className="text-xl font-serif text-rhino">
-                  {isOngoing ? "Project In Progress" : "Project"}
-                </h3>
-                <p className="text-sandstone mt-2">
-                  {isOngoing
-                    ? "This project is currently ongoing. Check back later for images and updates."
-                    : "Project details will be available soon."}
-                </p>
+            <div className="relative flex flex-col items-center">
+              <div className="flex flex-col items-start w-full">
+                <span className="bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow mt-2 ml-2">Ongoing</span>
+                <span className="text-sandstone text-xs font-medium mt-1 ml-2">Will be available soon.</span>
+              </div>
+              <div className="mt-2 mb-2 flex items-center justify-center">
+                {project.thumbnail_url ? (
+                  <img
+                    src={project.thumbnail_url}
+                    alt={project.name}
+                    className="w-[340px] h-[190px] object-cover rounded-md border border-muted"
+                  />
+                ) : (
+                  <Clock className="h-16 w-16 mx-auto mb-4 text-sandstone opacity-50" />
+                )}
+              </div>
+              <div className="text-center px-4 pb-2 w-full">
+                <h3 className="text-xl font-serif text-rhino mt-2">{project.name}</h3>
+                <p className="text-sandstone text-sm mt-2">{project.description || 'No description available.'}</p>
               </div>
             </div>
           )}
-
-          <div className="space-y-2">
-            <h2 className="text-lg font-serif text-rhino">Project Details</h2>
-            <p className="text-sandstone text-sm">
-              {project.description || 'No description available.'}
-            </p>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

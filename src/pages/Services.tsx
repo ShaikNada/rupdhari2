@@ -299,23 +299,60 @@ const Services = () => {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
-          <Link
-            key={project.id}
-            to={`/projects/${project.id}`}
-            className="block hover:opacity-95 transition-opacity"
-            style={{ textDecoration: "none" }}
-          >
-            <ProjectCard
-              project={{
-                ...project,
-                thumbnail_url: (project as any).thumbnail_url || '',
-                video_url: project.videos?.[0] ?? null,
-                images: project.images || [],
-              }}
-            />
-          </Link>
-        ))}
+        {projects.map((project) => {
+          const isOngoing = project.status === 'Ongoing';
+          const isCompleted = project.status === 'Completed';
+          if (isOngoing) {
+            // Show popup for ongoing projects
+            return (
+              <div key={project.id} className="relative">
+                <ProjectCard
+                  project={{
+                    ...project,
+                    thumbnail_url: (project as any).thumbnail_url || '',
+                    video_url: project.videos?.[0] ?? null,
+                    images: project.images || [],
+                  }}
+                />
+                <div className="absolute top-2 left-2 z-10">
+                  <span className="bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">Ongoing</span>
+                </div>
+              </div>
+            );
+          } else if (isCompleted) {
+            // Normal link for completed projects
+            return (
+              <Link
+                key={project.id}
+                to={`/projects/${project.id}`}
+                className="block hover:opacity-95 transition-opacity"
+                style={{ textDecoration: "none" }}
+              >
+                <ProjectCard
+                  project={{
+                    ...project,
+                    thumbnail_url: (project as any).thumbnail_url || '',
+                    video_url: project.videos?.[0] ?? null,
+                    images: project.images || [],
+                  }}
+                />
+              </Link>
+            );
+          } else {
+            // Default fallback
+            return (
+              <ProjectCard
+                key={project.id}
+                project={{
+                  ...project,
+                  thumbnail_url: (project as any).thumbnail_url || '',
+                  video_url: project.videos?.[0] ?? null,
+                  images: project.images || [],
+                }}
+              />
+            );
+          }
+        })}
       </div>
     );
   }
